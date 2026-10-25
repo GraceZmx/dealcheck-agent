@@ -1,0 +1,38 @@
+# 报价评估配置（对应 PRD 5.4 节、7.1 节和附录 A）
+# 价格数据本身在 backend/data/benchmarks_v0.json，来源说明见 backend/data/BENCHMARK_SOURCES.md
+
+# 粉丝量级：含下限、不含上限（10,000 粉丝属于 micro）。范围外的账号不在支持范围内。
+tiers:
+  - {name: nano, min_followers: 1000, max_followers: 10000}
+  - {name: micro, min_followers: 10000, max_followers: 50000}
+  - {name: mid, min_followers: 50000, max_followers: 100000}
+  - {name: mid_plus, min_followers: 100000, max_followers: 250000}
+  - {name: upper, min_followers: 250000, max_followers: 500000}
+
+# 报价合理性得分（满分 45）：报价比 ≥ min_ratio 即得对应分数，从高到低匹配
+score_bands:
+  - {min_ratio: 1.0, points: 45}
+  - {min_ratio: 0.8, points: 35}
+  - {min_ratio: 0.6, points: 22}
+  - {min_ratio: 0.4, points: 10}
+  - {min_ratio: 0.0, points: 0}
+
+# 修正系数：调整后基准 = 基准 × (1 + 使用权加价) × (1 + 独家期加价) × 互动率系数
+adjustments:
+  engagement:
+    # 没有找到可靠的分平台、分量级互动率基准，V0 不启用（系数固定为 1.0）
+    enabled: false
+
+  usage_rights:
+    # 付费投放 / 白名单且没有单独计费：+20%（Influee：使用权加价 20–50%，取下限）
+    paid_not_billed_uplift: 0.20
+    # 永久、未写明期限或超过 long_threshold_days 天，且没有单独计费：+50%（同一来源取上限）
+    long_or_perpetual_not_billed_uplift: 0.50
+    long_threshold_days: 180
+
+  # 独家期加价：按天数从短到长匹配第一个 days ≤ max_days 的档位；max_days 为空表示不设上限
+  # 来源 Influee：30 天独家加价 25–50%，90 天以上可能翻倍。全行业独家暂无单独数据，沿用同一档位。
+  exclusivity:
+    - {max_days: 30, uplift: 0.25}
+    - {max_days: 89, uplift: 0.50}
+    - {max_days: null, uplift: 1.00}

@@ -1,14 +1,18 @@
-"""读取 backend/config/ 下的 YAML 配置，并用 Pydantic 校验格式和取值。
+"""读取 backend/config/ 下的 YAML 配置和 backend/data/ 下的基准表，并用 Pydantic 校验格式和取值。
 
 配置在每次调用时重新读取（文件很小），所以手动修改 YAML 后无需重启服务即可生效。
 """
 
+import json
 from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, Field, model_validator
 
+from app.models import Confidence, DeliverableType, Niche, Platform, Tier
+
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 
 class ExclusivityRules(BaseModel):
@@ -71,3 +75,136 @@ def load_yaml(path: Path) -> dict:
 def load_contract_rules(path: Path | None = None) -> ContractRulesConfig:
     """读取合同条款阈值。path 为空时读取默认的 contract_rules.yaml。"""
     return ContractRulesConfig.model_validate(load_yaml(path or CONFIG_DIR / "contract_rules.yaml"))
+
+
+# ---------- 报价评估配置（pricing.yaml）----------
+
+
+class TierDef(BaseModel):
+    name: Tier
+    min_followers: int = Field(ge=0)
+    max_followers: int = Field(gt=0)
+
+
+class ScoreBand(BaseModel):
+    min_ratio: float = Field(ge=0)
+    points: int = Field(ge=0)
+
+
+class EngagementAdjustment(BaseModel):
+    enabled: bool = False
+
+
+class UsageRightsUplift(BaseModel):
+    paid_not_billed_uplift: float = Field(ge=0)
+    long_or_perpetual_not_billed_uplift: float = Field(ge=0)
+    long_threshold_days: int = Field(ge=0)
+
+
+class ExclusivityUplift(BaseModel):
+    max_days: int | None = Field(None, ge=0)
+    uplift: float = Field(ge=0)
+
+
+class PricingAdjustments(BaseModel):
+    engagement: EngagementAdjustment
+    usage_rights: UsageRightsUplift
+    exclusivity: list[ExclusivityUplift] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _check_exclusivity_bands(self):
+        days = [b.max_days for b in self.exclusivity]
+        if days[-1] is not None or None in days[:-1]:
+            raise ValueError("exclusivity 档位只有最后一档的 max_days 可以为空")
+        if days[:-1] != sorted(days[:-1]):
+            raise ValueError("exclusivity 档位需按 max_days 从小到大排列")
+        return self
+
+
+class PricingConfig(BaseModel):
+    tiers: list[TierDef] = Field(min_length=1)
+    score_bands: list[ScoreBand] = Field(min_length=1)
+    adjustments: PricingAdjustments
+
+    @model_validator(mode="after")
+    def _check(self):
+        for prev, cur in zip(self.tiers, self.tiers[1:]):
+            if prev.max_followers != cur.min_followers:
+                raise ValueError("tiers 必须首尾相接、从小到大排列")
+        ratios = [b.min_ratio for b in self.score_bands]
+        if ratios != sorted(ratios, reverse=True) or ratios[-1] != 0:
+            raise ValueError("score_bands 需按 min_ratio 从大到小排列，且最后一档为 0")
+        return self
+
+    @property
+    def max_score(self) -> int:
+        return max(b.points for b in self.score_bands)
+
+
+def load_pricing_config(path: Path | None = None) -> PricingConfig:
+    """读取报价评估配置。path 为空时读取默认的 pricing.yaml。"""
+    return PricingConfig.model_validate(load_yaml(path or CONFIG_DIR / "pricing.yaml"))
+
+
+# ---------- 市场价基准表（benchmarks_v0.json）----------
+
+
+class SourceInfo(BaseModel):
+    title: str
+    url: str
+    updated: str
+
+
+class BasePrice(BaseModel):
+    platform: Platform
+    deliverable: DeliverableType
+    tier: Tier
+    p25: float = Field(gt=0)
+    p50: float = Field(gt=0)
+    p75: float = Field(gt=0)
+    confidence: Confidence
+    sources: list[str] = Field(min_length=1)
+    method: str
+
+
+class NicheCoefficient(BaseModel):
+    coefficient: float = Field(gt=0)
+    confidence: Confidence
+    sources: list[str]
+    note: str
+
+
+class BenchmarkData(BaseModel):
+    version: str
+    currency: str
+    data_date: str
+    sources: dict[str, SourceInfo]
+    base_prices: list[BasePrice]
+    niche_coefficients: dict[Niche, NicheCoefficient]
+
+    @model_validator(mode="after")
+    def _check(self):
+        known = set(self.sources)
+        for row in self.base_prices:
+            if not row.p25 <= row.p50 <= row.p75:
+                raise ValueError(f"{row.deliverable.value}/{row.tier.value}: 需满足 P25 ≤ P50 ≤ P75")
+            if row.platform != row.deliverable.platform:
+                raise ValueError(f"{row.deliverable.value}: 平台不匹配")
+            if unknown := set(row.sources) - known:
+                raise ValueError(f"{row.deliverable.value}/{row.tier.value}: 未知来源 {unknown}")
+        for niche, nc in self.niche_coefficients.items():
+            if unknown := set(nc.sources) - known:
+                raise ValueError(f"{niche.value}: 未知来源 {unknown}")
+        return self
+
+    def base_price(self, deliverable: DeliverableType, tier: Tier) -> BasePrice:
+        for row in self.base_prices:
+            if row.deliverable == deliverable and row.tier == tier:
+                return row
+        raise KeyError(f"基准表缺少 {deliverable.value} / {tier.value}")
+
+
+def load_benchmarks(path: Path | None = None) -> BenchmarkData:
+    """读取市场价基准表。path 为空时读取默认的 benchmarks_v0.json。"""
+    with open(path or DATA_DIR / "benchmarks_v0.json", encoding="utf-8") as f:
+        return BenchmarkData.model_validate(json.load(f))

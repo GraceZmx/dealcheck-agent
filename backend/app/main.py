@@ -1,9 +1,10 @@
 """DealCheck Agent 后端入口。"""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
-from app.models import ContractCheckResult, ContractTerms
+from app.models import ContractCheckResult, ContractTerms, PricingInput, PricingResult
 from app.rules.contract import check_contract
+from app.rules.pricing import UnsupportedFollowerCountError, evaluate_pricing
 
 app = FastAPI(
     title="DealCheck Agent",
@@ -22,3 +23,12 @@ def health() -> dict[str, str]:
 def contract_check(terms: ContractTerms) -> ContractCheckResult:
     """合同条款红黄绿灯检查（PRD 5.5 节）。每次调用都会重新读取配置文件。"""
     return check_contract(terms)
+
+
+@app.post("/api/rules/pricing", response_model=PricingResult)
+def pricing(inp: PricingInput) -> PricingResult:
+    """报价评估（PRD 5.4 节）。每次调用都会重新读取配置和基准表。"""
+    try:
+        return evaluate_pricing(inp)
+    except UnsupportedFollowerCountError as e:
+        raise HTTPException(status_code=422, detail=str(e))

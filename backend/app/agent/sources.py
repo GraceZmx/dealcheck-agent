@@ -3,6 +3,7 @@
 Agent 只能用编号引用来源、只能读取登记过的网页，因此引用的 URL 一定出现在本次搜索结果里（护栏 G3）。
 """
 
+from app.agent.urls import clean_url
 from app.models import SourceRef
 from app.search.base import SearchResult
 
@@ -13,12 +14,13 @@ class SourceRegistry:
         self._id_by_url: dict[str, str] = {}
 
     def register(self, result: SearchResult) -> str:
-        """登记一条搜索结果并返回编号；同一 URL 重复出现时返回原编号。"""
-        if result.url in self._id_by_url:
-            return self._id_by_url[result.url]
+        """登记一条搜索结果并返回编号。URL 先清理（去掉跟踪参数和 #片段），清理后相同的视为同一来源。"""
+        url = clean_url(result.url)
+        if url in self._id_by_url:
+            return self._id_by_url[url]
         sid = f"s{len(self._by_id) + 1}"
-        self._by_id[sid] = result
-        self._id_by_url[result.url] = sid
+        self._by_id[sid] = result.model_copy(update={"url": url})
+        self._id_by_url[url] = sid
         return sid
 
     def get(self, source_id: str) -> SearchResult | None:

@@ -10,6 +10,7 @@ from typing import Literal
 
 from pydantic import ValidationError
 
+from app.agent.citations import enforce_citations
 from app.agent.prompts import build_system_prompt, build_task_message
 from app.agent.tools import SUBMIT_SPEC, TOOL_SPECS, ToolContext, execute_tool
 from app.config import AgentConfig, ScoringConfig
@@ -31,11 +32,8 @@ class AgentRun:
 
 
 def to_findings(submission: AgentSubmission, ctx: ToolContext) -> AgentFindings:
-    """来源列表由程序根据登记表生成：只包含 Agent 引用过、且确实在本次搜索中出现过的编号。"""
-    return AgentFindings(
-        **submission.model_dump(),
-        sources=ctx.registry.refs(submission.cited_source_ids()),
-    )
+    """来源列表由程序根据登记表生成（G3），并保证正文和字段里的每个引用都在列表中（G12）。"""
+    return enforce_citations(submission, ctx.registry)
 
 
 def _preview(text: str, limit: int = 300) -> str:

@@ -349,14 +349,6 @@ class AgentSubmission(BaseModel):
     values_fit: ValuesFit = ValuesFit()
     score_adjustments: list[ScoreAdjustment] = Field(default_factory=list)
 
-    def cited_source_ids(self) -> set[str]:
-        ids: set[str] = set(self.values_fit.source_ids)
-        for group in (self.severe_flags, self.detected_categories, self.custom_category_matches,
-                      self.peer_rates, self.score_adjustments):
-            for item in group:
-                ids.update(item.source_ids)
-        return ids
-
 
 class AgentFindings(BaseModel):
     brand_entity_confirmed: bool
@@ -369,6 +361,9 @@ class AgentFindings(BaseModel):
     custom_category_matches: list[CustomCategoryMatch] = Field(default_factory=list)
     score_adjustments: list[ScoreAdjustment] = Field(default_factory=list)
     sources: list[SourceRef] = Field(default_factory=list)
+    unverified_citations: list[str] = Field(
+        default_factory=list, description="Agent 引用了但本次搜索中不存在的编号（护栏 G12），已从正文中删除"
+    )
 
     @property
     def source_map(self) -> dict[str, SourceRef]:

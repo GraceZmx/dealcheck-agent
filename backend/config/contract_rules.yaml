@@ -1,0 +1,26 @@
+# 合同条款红黄绿灯阈值（对应 PRD 5.5 节）
+# 修改这里的数字即可改变判定结果，无需改代码。所有"max"均为包含边界（≤），"min"均为包含边界（≥）。
+
+exclusivity:
+  # 同品类竞品独家：≤ 30 天绿灯，31–90 天黄灯，> 90 天红灯
+  category_green_max_days: 30
+  category_yellow_max_days: 90
+  # 全行业独家：≤ 30 天黄灯，> 30 天红灯（全行业独家没有绿灯）
+  industry_yellow_max_days: 30
+
+usage_rights:
+  # 付费投放 / 白名单：≤ 30 天绿灯
+  paid_green_max_days: 30
+  # 付费投放 / 白名单：31–180 天（约 6 个月）黄灯；
+  # 超过 180 天时，单独计费为黄灯，没有额外费用为红灯；永久使用权一律红灯
+  paid_yellow_max_days: 180
+
+kill_fee:
+  # 撤单费：≥ 50% 绿灯，25%–49% 黄灯，< 25% 或未提及红灯
+  green_min_percent: 50
+  yellow_min_percent: 25
+
+revisions:
+  # 修改次数：≤ 2 次绿灯，3 次黄灯，≥ 4 次或无限次红灯
+  green_max: 2
+  yellow_max: 3

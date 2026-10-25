@@ -1,6 +1,6 @@
 """DealCheck Agent 后端入口。"""
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 
 from app.models import (
     ContractCheckResult,
@@ -10,7 +10,14 @@ from app.models import (
     PricingInput,
     PricingResult,
 )
+from app.config import load_agent_config
+from app.llm.base import LLMError
+from app.llm.factory import create_llm_provider
+from app.pipeline import FullEvaluationRequest, FullEvaluationResult, run_full_evaluation
 from app.rules.contract import check_contract
+from app.search.base import SearchError
+from app.search.factory import create_search_provider
+from app.settings import load_settings
 from app.rules.engine import evaluate_deal
 from app.rules.pricing import UnsupportedFollowerCountError, evaluate_pricing
 
@@ -49,3 +56,23 @@ def evaluate(req: EvaluationRequest) -> EvaluationResult:
         return evaluate_deal(req)
     except UnsupportedFollowerCountError as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+def get_providers():
+    """按 .env 创建模型和搜索 Provider；没有 Key 时返回 (None, None, 原因)，评估退回仅规则模式。"""
+    settings, config = load_settings(), load_agent_config()
+    try:
+        return create_llm_provider(settings, config), create_search_provider(settings, config), None
+    except (LLMError, SearchError) as e:
+        return None, None, str(e)
+
+
+@app.post("/api/evaluate", response_model=FullEvaluationResult)
+def evaluate_full(req: FullEvaluationRequest, providers=Depends(get_providers)) -> FullEvaluationResult:
+    """完整评估：规则 + Agent 品牌调查 + 打分决策 + 邮件草稿。Agent 不可用时自动退回仅规则模式。"""
+    llm, search, reason = providers
+    try:
+        result, _ = run_full_evaluation(req, llm, search, unavailable_reason=reason)
+    except UnsupportedFollowerCountError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return result

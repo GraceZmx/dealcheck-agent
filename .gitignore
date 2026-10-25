@@ -26,3 +26,7 @@ npm-debug.log*
 
 # 测试缓存
 .pytest_cache/
+
+# Agent 运行记录与本地测试数据（可能包含真实品牌信息，不上传）
+traces/
+local/

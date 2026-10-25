@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 # ---------- 合同条款输入（对应 PRD 5.3 节表单）----------
@@ -206,7 +206,10 @@ class PricingResult(BaseModel):
 
 
 class SensitiveCategory(str, Enum):
-    """创作者可能拒接的敏感品类。"""
+    """标准敏感品类：创作者拒接清单、表单勾选、Agent 报告共用这套名称，便于规则精确比对。
+
+    清单本身不代表"不能接"，只有命中创作者自己的拒接清单才会触发 HR-1。
+    """
 
     ALCOHOL = "alcohol"
     TOBACCO_VAPING = "tobacco_vaping"
@@ -216,12 +219,30 @@ class SensitiveCategory(str, Enum):
     WEIGHT_LOSS_SUPPLEMENTS = "weight_loss_supplements"
     ADULT_CONTENT = "adult_content"
     FIREARMS = "firearms"
+    FAST_FASHION = "fast_fashion"  # 快时尚
+    MLM = "mlm"  # 传销式多层次营销
+    SUPPLEMENTS_PHARMA = "supplements_pharma"  # 保健品与处方药
+    POLITICAL_CONTENT = "political_content"  # 政治类内容
+    PAYDAY_LOANS = "payday_loans"  # 高利贷与现金贷
 
 
 class CreatorProfile(BaseModel):
     followers: dict[Platform, int] = Field(description="各平台粉丝数")
     niche: Niche
-    blocked_categories: list[SensitiveCategory] = Field(default_factory=list, description="拒接品类")
+    blocked_categories: list[SensitiveCategory] = Field(default_factory=list, description="拒接品类（标准清单）")
+    blocked_custom: list[Annotated[str, Field(min_length=1, max_length=100)]] = Field(
+        default_factory=list,
+        max_length=10,
+        description="其他拒接品类（自由填写）；由 Agent 做语义判断，命中只触发封顶类规则 HR-8",
+    )
+
+    @field_validator("blocked_custom")
+    @classmethod
+    def _strip_custom(cls, items: list[str]) -> list[str]:
+        cleaned = [i.strip() for i in items]
+        if any(not i for i in cleaned):
+            raise ValueError("自由填写的拒接品类不能为空白")
+        return cleaned
     rate_floor_usd: float | None = Field(None, ge=0, description="最低接单价；为空表示未设置")
 
 
@@ -264,6 +285,14 @@ class DetectedCategory(BaseModel):
     source_ids: list[str] = Field(default_factory=list)
 
 
+class CustomCategoryMatch(BaseModel):
+    """Agent 判断品牌和创作者某个自由填写的拒接品类语义相符。"""
+
+    blocked_text: str = Field(description="创作者填写的原文，必须和档案中的某一项一致")
+    explanation: str
+    source_ids: list[str] = Field(default_factory=list)
+
+
 class AdjustmentItem(str, Enum):
     BRAND_REPUTATION = "brand_reputation"
     VALUES_FIT = "values_fit"
@@ -281,6 +310,7 @@ class AgentFindings(BaseModel):
     brand_entity_confirmed: bool
     severe_flags: list[SevereFlag] = Field(default_factory=list)
     detected_categories: list[DetectedCategory] = Field(default_factory=list)
+    custom_category_matches: list[CustomCategoryMatch] = Field(default_factory=list)
     score_adjustments: list[ScoreAdjustment] = Field(default_factory=list)
     sources: list[SourceRef] = Field(default_factory=list)
 

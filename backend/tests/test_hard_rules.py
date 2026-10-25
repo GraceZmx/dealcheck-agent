@@ -1,6 +1,7 @@
 """硬性规则测试：HR-1 ~ HR-7 的命中与不命中。HR-2 / HR-6 / HR-7 用模拟的 Agent 结果。"""
 
 import pytest
+from pydantic import ValidationError
 
 from app.config import load_contract_rules, load_hard_rules_config
 from app.models import (
@@ -235,3 +236,86 @@ def test_resolve_urls_dedupes_and_drops_invalid():
 
 def test_independent_source_count():
     assert independent_source_count(["https://a.example/1", "https://www.a.example/2", "https://b.example"]) == 2
+
+
+# ---------- 扩充后的标准品类（HR-1）----------
+
+
+NEW_CATEGORIES = ["fast_fashion", "mlm", "supplements_pharma", "political_content", "payday_loans"]
+
+
+@pytest.mark.parametrize("category", NEW_CATEGORIES)
+def test_hr1_new_categories_reject_when_blocked(category):
+    hits = run(p=profile(blocked_categories=[category]), d=deal(brand_categories=[category]))
+    assert ids(hits) == ["HR-1"] and hits[0].kind == REJECT
+
+
+@pytest.mark.parametrize("category", NEW_CATEGORIES)
+def test_hr1_new_categories_ignored_when_not_blocked(category):
+    f = findings(detected_categories=[{"category": category, "source_ids": ["b1"]}])
+    assert run(p=profile(blocked_categories=[]), d=deal(brand_categories=[category]), f=f) == []
+
+
+# ---------- HR-8 自由填写的拒接品类 ----------
+
+
+def _custom_match(text, source_ids=("b1",)):
+    return [{"blocked_text": text, "explanation": "The brand sells energy drinks.", "source_ids": list(source_ids)}]
+
+
+def test_hr8_custom_match_with_source_caps():
+    p = profile(blocked_custom=["Energy drinks"])
+    hits = run(p=p, f=findings(custom_category_matches=_custom_match("Energy drinks")))
+    assert ids(hits) == ["HR-8"] and hits[0].kind == CAP
+    assert "verify it yourself" in hits[0].message
+    assert hits[0].evidence_urls == ["https://news-b.example/report"]
+
+
+def test_hr8_match_ignores_case_and_spaces():
+    p = profile(blocked_custom=["Energy drinks"])
+    hits = run(p=p, f=findings(custom_category_matches=_custom_match("  energy DRINKS ")))
+    assert ids(hits) == ["HR-8"]
+    assert '"Energy drinks"' in hits[0].message  # 提示里用创作者自己写的原文
+
+
+@pytest.mark.parametrize("source_ids", [(), ("missing",), ("bad",)])
+def test_hr8_without_valid_source_is_ignored(source_ids):
+    p = profile(blocked_custom=["Energy drinks"])
+    f = findings(custom_category_matches=_custom_match("Energy drinks", source_ids))
+    assert run(p=p, f=f) == []
+
+
+def test_hr8_ignores_text_not_in_profile():
+    """Agent 不能自己编一个拒接理由：只认创作者档案里写了的条目。"""
+    p = profile(blocked_custom=["Energy drinks"])
+    assert run(p=p, f=findings(custom_category_matches=_custom_match("Sugary snacks"))) == []
+
+
+def test_hr8_not_triggered_without_custom_items():
+    assert run(f=findings(custom_category_matches=_custom_match("Energy drinks"))) == []
+
+
+def test_hr8_not_triggered_in_rules_only_mode():
+    assert run(p=profile(blocked_custom=["Energy drinks"]), f=None) == []
+
+
+def test_hr8_reported_once_per_custom_item():
+    p = profile(blocked_custom=["Energy drinks"])
+    f = findings(custom_category_matches=_custom_match("Energy drinks") + _custom_match("energy drinks", ("a1",)))
+    assert ids(run(p=p, f=f)) == ["HR-8"]
+
+
+def test_hr8_min_sources_comes_from_config(hr_config):
+    stricter = hr_config.model_copy(update={"custom_category_min_sources": 2})
+    p = profile(blocked_custom=["Energy drinks"])
+    assert run(p=p, f=findings(custom_category_matches=_custom_match("Energy drinks")), config=stricter) == []
+
+
+@pytest.mark.parametrize("bad", [[""], ["   "], ["x" * 101], ["item"] * 11])
+def test_blocked_custom_validation(bad):
+    with pytest.raises(ValidationError):
+        profile(blocked_custom=bad)
+
+
+def test_blocked_custom_is_trimmed():
+    assert profile(blocked_custom=["  Energy drinks "]).blocked_custom == ["Energy drinks"]

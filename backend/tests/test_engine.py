@@ -98,3 +98,18 @@ def test_evaluate_endpoint_rejects_unsupported_followers():
     raw["profile"]["followers"]["instagram"] = 600_000
     response = TestClient(app).post("/api/rules/evaluate", json=raw)
     assert response.status_code == 422
+
+
+def test_hr8_caps_high_score_at_negotiate():
+    """案例 1 原本 87 分"接受"；加上自由填写的拒接品类命中后，降为"谈判"而不是拒绝。"""
+    raw = load_example("1_accept_fitness_tiktok.json").model_dump(mode="json")
+    raw["profile"]["blocked_custom"] = ["Caffeinated energy drinks"]
+    raw["agent_findings"]["custom_category_matches"] = [
+        {"blocked_text": "caffeinated energy drinks", "explanation": "Several products contain 200mg caffeine.",
+         "source_ids": ["s3"]}
+    ]
+    req = EvaluationRequest.model_validate(raw)
+    result = evaluate_deal(req)
+    assert result.total_score == 87
+    assert result.decision == Decision.NEGOTIATE
+    assert [h.rule_id for h in result.hard_rules] == ["HR-8"]

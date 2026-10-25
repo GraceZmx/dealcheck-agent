@@ -4,8 +4,9 @@
     HR-1 品牌涉及创作者拒接品类    HR-2 严重负面（≥ 2 个独立来源）    HR-3 要求预付费用
 封顶类（命中后最多到"谈判"）：
     HR-4 有红灯条款    HR-5 报价低于最低接单价    HR-6 严重负面只有单一来源    HR-7 无法确认品牌实体
+    HR-8 品牌可能涉及创作者自由填写的拒接品类（Agent 语义判断，需用户自行核实）
 
-HR-2 / HR-6 / HR-7 的证据来自 Agent，判定逻辑在这里，由规则决定是否命中。
+HR-2 / HR-6 / HR-7 / HR-8 的证据来自 Agent，判定逻辑在这里，由规则决定是否命中。
 """
 
 from app.config import HardRulesConfig, load_hard_rules_config
@@ -118,6 +119,34 @@ def check_brand_entity(findings: AgentFindings | None) -> list[HardRuleHit]:
     return []
 
 
+def check_custom_categories(
+    profile: CreatorProfile, findings: AgentFindings | None, config: HardRulesConfig
+) -> list[HardRuleHit]:
+    """HR-8：Agent 判断品牌和创作者自由填写的拒接品类相符。
+
+    只认创作者档案里确实写了的条目（忽略大小写和首尾空格），防止 Agent 自己编一个拒接理由。
+    """
+    if not findings or not profile.blocked_custom:
+        return []
+    custom = {c.casefold(): c for c in profile.blocked_custom}
+    hits, reported = [], set()
+    for match in findings.custom_category_matches:
+        original = custom.get(match.blocked_text.strip().casefold())
+        if original is None or original in reported:
+            continue
+        urls = resolve_urls(match.source_ids, findings)
+        if len(urls) < config.custom_category_min_sources:
+            continue
+        hits.append(HardRuleHit(
+            rule_id="HR-8", kind=CAP,
+            message=f'This brand may relate to something you don\'t work with ("{original}"): '
+                    f"{match.explanation} This is an automated judgment, so please verify it yourself.",
+            evidence_urls=urls,
+        ))
+        reported.add(original)
+    return hits
+
+
 def evaluate_hard_rules(
     profile: CreatorProfile,
     deal: DealInput,
@@ -134,5 +163,6 @@ def evaluate_hard_rules(
         + check_red_terms(contract)
         + check_rate_floor(profile, deal)
         + check_brand_entity(findings)
+        + check_custom_categories(profile, findings, config)
     )
     return sorted(hits, key=lambda h: int(h.rule_id.split("-")[1]))

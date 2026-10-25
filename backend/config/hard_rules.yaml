@@ -6,3 +6,7 @@ severe_negative_min_independent_sources: 2
 
 # Agent 发现品牌实际业务涉及创作者拒接品类时（HR-1），至少需要这么多条有效来源作为证据
 detected_category_min_sources: 1
+
+# HR-8：Agent 判断品牌和创作者"其他（自由填写）"的拒接品类语义相符时，至少需要这么多条有效来源。
+# 语义判断可靠性较低，所以只封顶为谈判，不直接拒绝。
+custom_category_min_sources: 1

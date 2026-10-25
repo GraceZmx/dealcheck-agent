@@ -161,12 +161,12 @@ def test_hr3_upfront_payment_rejects():
 def test_hr4_red_term_caps():
     hits = run(d=deal(contract={"kill_fee_percent": None, "revisions": 2}))
     assert ids(hits) == ["HR-4"] and hits[0].kind == CAP
-    assert "kill_fee" in hits[0].message
+    assert "kill fee" in hits[0].message
 
 
 def test_hr4_lists_all_red_terms():
     hits = run(d=deal(contract={"kill_fee_percent": None, "revisions": "unlimited"}))
-    assert "kill_fee" in hits[0].message and "revisions" in hits[0].message
+    assert "kill fee" in hits[0].message and "revisions" in hits[0].message
 
 
 def test_yellow_terms_do_not_trigger_hr4():

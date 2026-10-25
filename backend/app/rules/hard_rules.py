@@ -90,7 +90,7 @@ def check_upfront_payment(deal: DealInput) -> list[HardRuleHit]:
 
 def check_red_terms(contract: ContractCheckResult) -> list[HardRuleHit]:
     """HR-4：任一条款为红灯。"""
-    red = [t.term.value for t in contract.terms if t.light == Light.RED]
+    red = [t.term.value.replace("_", " ") for t in contract.terms if t.light == Light.RED]
     if red:
         return [HardRuleHit(
             rule_id="HR-4", kind=CAP,

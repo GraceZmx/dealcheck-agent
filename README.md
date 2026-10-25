@@ -4,7 +4,7 @@
 
 产品需求见 [docs/PRD.md](docs/PRD.md)。
 
-> 开发中：M1（规则引擎）和 M2（Agent 核心）已完成，下一步是 M3（护栏层 + 网页界面 + 部署）。
+> 开发中：M1（规则引擎）、M2（Agent 核心）和网页界面已完成，下一步是部署上线。
 
 ## 本地运行
 
@@ -24,7 +24,7 @@ cp .env.example .env
 # 4. 运行测试
 pytest
 
-# 5. 启动后端服务，然后访问 http://localhost:8000/docs
+# 5. 启动服务：网页界面 http://localhost:8000 ，接口文档 http://localhost:8000/docs
 uvicorn app.main:app --app-dir backend --reload
 
 # 6. 用命令行评估一个样例案例（仅规则引擎，不需要 API Key）
@@ -45,6 +45,8 @@ python scripts/evaluate.py examples/deals/2_negotiate_maya.json --agent
 | `backend/app/search/` | 搜索封装层：DeepSeek Search / Fetch |
 | `backend/app/agent/` | Agent：工具、预算、Agent Loop、提示词、邮件草稿 |
 | `backend/app/pipeline.py` | 完整评估流程：规则预检 → Agent → 打分决策 → 邮件 |
+| `backend/app/protection.py` | 线上防刷：IP 限流、每日 Agent 次数、全站花费上限 |
+| `frontend/` | 网页界面（HTML + JavaScript，无需构建） |
 | `backend/config/` | 所有阈值和分数（YAML），改数字不用改代码 |
 | `backend/data/` | 市场价基准表 V0 及其[来源说明](backend/data/BENCHMARK_SOURCES.md) |
 | `backend/tests/` | pytest 单元测试 |

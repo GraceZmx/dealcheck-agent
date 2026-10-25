@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DealCheck</title>
+  <meta name="description" content="Check a brand deal before you reply: fair-rate benchmark, contract red flags, brand research with sources, and a negotiation email draft.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='5' fill='%23C8F066'/%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="logo" href="#/deal"><span>DealCheck</span><span class="logo-dot" aria-hidden="true"></span></a>
+      <nav class="tabs" aria-label="Pages">
+        <a class="tab" data-page="profile" href="#/profile">Profile</a>
+        <a class="tab" data-page="deal" href="#/deal">Deal</a>
+        <a class="tab" data-page="report" href="#/report">Report</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" class="container" aria-live="polite"></main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

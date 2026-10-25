@@ -1,10 +1,14 @@
 # DealCheck Agent
 
+**线上体验：https://dealcheck-agent-djj1.onrender.com**
+
+> 部署在 Render 免费版：闲置 15 分钟后会休眠，首次打开需要等 30–60 秒唤醒，之后就正常了。每个 IP 每天可以做 5 次带 AI 品牌调查的评估，超出后自动改为仅规则模式。
+
 帮中小创作者评估品牌合作（Brand Deal）的 AI 收入决策助手：用规则判断报价和合同条款，用 Agent 调查品牌背景，最终给出"接受 / 谈判 / 拒绝"建议和一封谈判邮件草稿。
 
 产品需求见 [docs/PRD.md](docs/PRD.md)。
 
-> 开发中：M1（规则引擎）、M2（Agent 核心）和网页界面已完成，下一步是部署上线。
+> 开发进度：M1 规则引擎、M2 Agent 核心、M3 护栏 + 网页界面 + 部署已完成；下一步是评测（M4）。详见 [docs/notes/progress.md](docs/notes/progress.md)。
 
 ## 本地运行
 

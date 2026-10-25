@@ -11,9 +11,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
-from app.config import AgentConfig
+from app.config import AgentConfig, ContractRulesConfig, load_contract_rules
 from app.llm.base import ChatOptions, LLMError, LLMProvider, Message
-from app.models import Decision, DealInput, EvaluationResult, Light
+from app.models import ContractCheckResult, Decision, DealInput, EvaluationResult, Light, TermName
 
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z0-9_]+)\s*\}\}")
 # 模型自己写出的金额、百分比或天数 / 月数：这些数字只能来自占位符
@@ -34,7 +34,9 @@ Return JSON: {{"subject": "...", "body": "..."}}"""
 
 GOALS = {
     Decision.ACCEPT: "Accept the offer and confirm the agreed terms. Ask for the contract or brief to get started.",
-    Decision.NEGOTIATE: "Express interest, then ask for the changes listed below. Keep the door open.",
+    Decision.NEGOTIATE: "Express interest, then propose the changes as a short bulleted list: one line for the rate "
+                        "(if {{counter_rate}} is provided) and one line per requested change, each line containing exactly "
+                        "one placeholder (for example: '- {{ask_1}}'). Keep the door open.",
     Decision.DECLINE: "Politely decline. Give a brief, non-specific reason (for example, not the right fit right now). "
                       "Do not mention concerns about the brand.",
 }
@@ -47,7 +49,20 @@ class EmailDraft(BaseModel):
     note: str | None = None
 
 
-def build_variables(deal: DealInput, evaluation: EvaluationResult) -> dict[str, str]:
+def brand_facing_asks(contract: ContractCheckResult, rules: ContractRulesConfig) -> list[str]:
+    """把非绿灯条款写成对品牌方提出的修改要求。数字来自条款阈值配置，和红黄灯判定一致。"""
+    phrases = {
+        TermName.EXCLUSIVITY: f"Exclusivity limited to direct competitors for up to {rules.exclusivity.category_green_max_days} days",
+        TermName.USAGE_RIGHTS: f"Paid usage limited to {rules.usage_rights.paid_green_max_days} days, or a separate usage fee for longer use",
+        TermName.KILL_FEE: f"A kill fee of at least {rules.kill_fee.green_min_percent:g}% if the campaign is cancelled after work begins",
+        TermName.REVISIONS: f"Up to {rules.revisions.green_max} rounds of revisions, with additional rounds billed separately",
+    }
+    return [phrases[t.term] for t in contract.terms if t.light != Light.GREEN]
+
+
+def build_variables(
+    deal: DealInput, evaluation: EvaluationResult, rules: ContractRulesConfig | None = None
+) -> dict[str, str]:
     """占位符的值，全部来自用户输入或规则引擎。"""
     values = {"brand_name": deal.brand_name, "offer": f"${deal.offer_usd:,.0f}"}
     if evaluation.decision != Decision.NEGOTIATE:
@@ -55,8 +70,7 @@ def build_variables(deal: DealInput, evaluation: EvaluationResult) -> dict[str, 
     counter = evaluation.pricing.suggested_counter_range
     if counter:
         values["counter_rate"] = f"${round(counter.high / 10) * 10:,.0f}"
-    asks = [t.suggestion for t in evaluation.contract.terms if t.light != Light.GREEN and t.suggestion]
-    for i, ask in enumerate(asks, start=1):
+    for i, ask in enumerate(brand_facing_asks(evaluation.contract, rules or load_contract_rules()), start=1):
         values[f"ask_{i}"] = ask
     return values
 
@@ -107,7 +121,7 @@ def template_email(decision: Decision, variables: dict[str, str], creator_name: 
     asks = [v for k, v in variables.items() if k.startswith("ask_")]
     lines = []
     if "counter_rate" in variables:
-        lines.append(f"- My rate for this scope is {variables['counter_rate']}.")
+        lines.append(f"- A rate of {variables['counter_rate']} for this scope")
     lines += [f"- {a}" for a in asks]
     changes = "\n".join(lines) or "- I'd like to discuss the terms in a bit more detail."
     return (f"Re: Partnership with {brand}",

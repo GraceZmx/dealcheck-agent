@@ -36,8 +36,17 @@ def test_negotiate_variables_come_from_rules():
     v = build_variables(deal, ev)
     assert v["offer"] == "$450"
     assert v["counter_rate"] == "$830"  # 调整后 P75 = 834，取整到 10
-    assert v["ask_1"].startswith("Ask for a kill fee of at least 50%")
-    assert v["ask_2"].startswith("Limit revisions to 2 rounds")
+    assert v["ask_1"] == "A kill fee of at least 50% if the campaign is cancelled after work begins"
+    assert v["ask_2"] == "Up to 2 rounds of revisions, with additional rounds billed separately"
+
+
+def test_asks_follow_contract_config():
+    from app.agent.email import brand_facing_asks
+    from app.config import load_contract_rules
+    deal, ev = maya()
+    rules = load_contract_rules().model_copy(deep=True)
+    rules.kill_fee.green_min_percent = 60
+    assert "at least 60%" in brand_facing_asks(ev.contract, rules)[0]
 
 
 def test_accept_and_decline_have_no_counter_or_asks():

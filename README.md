@@ -4,7 +4,7 @@
 
 产品需求见 [docs/PRD.md](docs/PRD.md)。
 
-> 开发中：M1（规则引擎）已完成，下一步是 M2（Agent 核心）。
+> 开发中：M1（规则引擎）和 M2（Agent 核心）已完成，下一步是 M3（护栏层 + 网页界面 + 部署）。
 
 ## 本地运行
 
@@ -29,15 +29,25 @@ uvicorn app.main:app --app-dir backend --reload
 
 # 6. 用命令行评估一个样例案例（仅规则引擎，不需要 API Key）
 python scripts/evaluate.py examples/deals/2_negotiate_maya.json
+
+# 7. 完整评估：Agent 实时调查品牌 + 邮件草稿（需要在 .env 填入 DEEPSEEK_API_KEY，每次约 ¥0.04）
+python scripts/evaluate.py examples/deals/2_negotiate_maya.json --agent
 ```
+
+使用 `--agent` 时，案例文件里预先写好的 `agent_findings` 会被忽略，由 Agent 实时调查；运行记录保存在 `traces/`（不上传）。没有配置 Key 时自动退回仅规则模式。
 
 ## 目录
 
 | 路径 | 内容 |
 |---|---|
 | `backend/app/rules/` | 规则引擎：条款检查、报价评估、硬性规则、打分决策 |
+| `backend/app/llm/` | 模型封装层：统一接口 + DeepSeek 适配器 + 测试用假模型 |
+| `backend/app/search/` | 搜索封装层：DeepSeek Search / Fetch |
+| `backend/app/agent/` | Agent：工具、预算、Agent Loop、提示词、邮件草稿 |
+| `backend/app/pipeline.py` | 完整评估流程：规则预检 → Agent → 打分决策 → 邮件 |
 | `backend/config/` | 所有阈值和分数（YAML），改数字不用改代码 |
 | `backend/data/` | 市场价基准表 V0 及其[来源说明](backend/data/BENCHMARK_SOURCES.md) |
 | `backend/tests/` | pytest 单元测试 |
 | `examples/deals/` | 5 个样例合作案例 |
 | `scripts/` | 基准表生成脚本、命令行评估工具 |
+| `docs/notes/` | DeepSeek 接口实验记录、M2 成本与耗时基线 |

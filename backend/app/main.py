@@ -28,6 +28,7 @@ from app.rules.pricing import UnsupportedFollowerCountError, evaluate_pricing
 from app.search.base import SearchError
 from app.search.factory import create_search_provider
 from app.settings import load_settings
+from app.traces import save_trace
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 AGENT_OFF_MESSAGE = "AI brand research is temporarily turned off. Showing rules-only results."
@@ -115,9 +116,14 @@ def run_guarded(req: FullEvaluationRequest, providers, guard: UsageGuard, ip: st
             llm, search, reason, status = None, None, guard.message(limit), "limited"
     cost = 0.0
     try:
-        result, _ = run_full_evaluation(req, llm, search, unavailable_reason=reason,
-                                        unavailable_status=status, on_event=on_event)
+        result, trace = run_full_evaluation(req, llm, search, unavailable_reason=reason,
+                                            unavailable_status=status, on_event=on_event)
         cost = result.agent.usage.get("cost_cny", 0.0)
+        if load_settings().save_web_traces:
+            try:
+                save_trace(result, trace, req.deal.brand_name, tag="web", creator_name=req.creator_name)
+            except OSError:
+                pass  # 记录写不进去不影响评估结果
         return result
     finally:
         if ticket is not None:

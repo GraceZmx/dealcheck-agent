@@ -33,6 +33,7 @@ class Settings:
     deepseek_api_key: str | None = field(default=None, repr=False)  # repr=False：打印 Settings 时不显示 Key
     agent_enabled: bool = True  # 总开关：AGENT_ENABLED=false 时全站只用规则引擎
     debug_ip: bool = False  # 部署诊断：DEBUG_IP=true 时开放 /api/debug/ip
+    save_web_traces: bool = False  # 本地排查：SAVE_WEB_TRACES=true 时网页评估也把运行记录存进 traces/；线上不设置
 
     @property
     def has_deepseek_key(self) -> bool:
@@ -53,4 +54,5 @@ def load_settings(env_file: Path | None = None) -> Settings:
         deepseek_api_key=get("DEEPSEEK_API_KEY"),
         agent_enabled=(get("AGENT_ENABLED") or "true").lower() not in ("false", "0", "no", "off"),
         debug_ip=(get("DEBUG_IP") or "false").lower() in ("true", "1", "yes", "on"),
+        save_web_traces=(get("SAVE_WEB_TRACES") or "false").lower() in ("true", "1", "yes", "on"),
     )

@@ -10,9 +10,7 @@
 
 import argparse
 import json
-import re
 import sys
-from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -27,6 +25,7 @@ from app.rules.engine import evaluate_deal  # noqa: E402
 from app.search.base import SearchError  # noqa: E402
 from app.search.factory import create_search_provider  # noqa: E402
 from app.settings import load_settings  # noqa: E402
+from app.traces import save_trace  # noqa: E402
 
 LIGHT = {"green": "🟢", "yellow": "🟡", "red": "🔴"}
 DECISION = {"accept": "✅ ACCEPT", "negotiate": "🟠 NEGOTIATE", "decline": "⛔ DECLINE"}
@@ -43,12 +42,7 @@ def run_agent_mode(raw: dict, as_json: bool) -> None:
 
     full, trace = run_full_evaluation(req, llm, search, config, unavailable_reason=reason)
 
-    traces = ROOT / "traces"
-    traces.mkdir(exist_ok=True)
-    slug = re.sub(r"[^a-z0-9]+", "-", req.deal.brand_name.lower()).strip("-")
-    trace_path = traces / f"{datetime.now():%Y%m%d-%H%M%S}-{slug}.json"
-    trace_path.write_text(json.dumps({"result": full.model_dump(mode="json"), "trace": trace},
-                                     ensure_ascii=False, indent=2), encoding="utf-8")
+    trace_path = save_trace(full, trace, req.deal.brand_name, creator_name=req.creator_name)
 
     if as_json:
         print(full.model_dump_json(indent=2))

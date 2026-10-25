@@ -28,6 +28,7 @@ class ProtectionConfig(BaseModel):
     per_ip_requests_per_minute: int = Field(ge=1)
     reserve_cost_cny_per_evaluation: float = Field(ge=0)
     trusted_proxy_hops: int = Field(ge=0)
+    client_ip_header: str = ""
 
 
 def load_protection_config(path: Path | None = None) -> ProtectionConfig:
@@ -130,9 +131,12 @@ class UsageGuard:
             return self._spent_cny
 
 
-def client_ip(headers, peer: str | None, trusted_proxy_hops: int) -> str:
+def client_ip(headers, peer: str | None, trusted_proxy_hops: int, ip_header: str = "") -> str:
     """部署在代理后面时，取 X-Forwarded-For 右数第 trusted_proxy_hops 个地址：
-    代理会把它看到的客户端地址追加在最右边，客户端自己伪造的值只能出现在更左边。"""
+    代理会把它看到的客户端地址追加在最右边，客户端自己伪造的值只能出现在更左边。
+    配置了 ip_header 时优先读取该请求头（由代理覆盖写入的请求头，如 true-client-ip）。"""
+    if ip_header and headers.get(ip_header):
+        return headers.get(ip_header).split(",")[0].strip()
     forwarded = headers.get("x-forwarded-for")
     if trusted_proxy_hops and forwarded:
         parts = [p.strip() for p in forwarded.split(",") if p.strip()]

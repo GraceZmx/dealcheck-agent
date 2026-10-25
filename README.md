@@ -53,3 +53,13 @@ python scripts/evaluate.py examples/deals/2_negotiate_maya.json --agent
 | `examples/deals/` | 5 个样例合作案例 |
 | `scripts/` | 基准表生成脚本、命令行评估工具 |
 | `docs/notes/` | DeepSeek 接口实验记录、M2 成本与耗时基线 |
+
+## 部署（Render）
+
+仓库根目录的 `render.yaml` 描述了部署配置：在 Render 后台选择 **New → Blueprint**，连接本仓库，按提示填入 `DEEPSEEK_API_KEY` 即可。之后每次推送到 `main` 分支都会自动重新部署。
+
+线上防刷保护（`backend/config/protection.yaml`）：
+- 每个 IP 每天最多 5 次 AI 评估，全站每天 AI 花费上限 ¥5，超出后自动降级为仅规则模式；
+- 每个 IP 每分钟最多 30 次请求；
+- 在 Render 后台把环境变量 `AGENT_ENABLED` 改为 `false` 可一键关闭 AI；
+- 计数存在内存里，服务重启或休眠后清零，所以 DeepSeek 账户只保留少量余额，作为最后一道保险。

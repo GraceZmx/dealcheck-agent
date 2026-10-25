@@ -246,3 +246,35 @@ def test_stream_rejects_unsupported_followers(fresh_guard):
     raw = _body()
     raw["profile"]["followers"]["instagram"] = 700_000
     assert TestClient(app).post("/api/evaluate/stream", json=raw).status_code == 422
+
+
+# ---------- 部署诊断与 IP 请求头 ----------
+
+
+def test_client_ip_prefers_configured_header():
+    headers = {"x-forwarded-for": "6.6.6.6, 203.0.113.5", "true-client-ip": "198.51.100.9"}
+    assert client_ip(headers, "10.0.0.1", 1, "true-client-ip") == "198.51.100.9"
+    assert client_ip({"x-forwarded-for": "203.0.113.5"}, "10.0.0.1", 1, "true-client-ip") == "203.0.113.5"  # 请求头缺失时回退
+
+
+def test_debug_ip_hidden_by_default(monkeypatch):
+    monkeypatch.delenv("DEBUG_IP", raising=False)
+    monkeypatch.setattr("app.main.load_settings", lambda: load_settings(env_file=__import__("pathlib").Path("/nonexistent")))
+    assert TestClient(app).get("/api/debug/ip").status_code == 404
+
+
+def test_debug_ip_when_enabled(monkeypatch, fresh_guard):
+    monkeypatch.setenv("DEBUG_IP", "true")
+    body = TestClient(app).get("/api/debug/ip", headers={"x-forwarded-for": "1.2.3.4, 203.0.113.5"}).json()
+    assert body["detected"] == "203.0.113.5"
+    assert body["x_forwarded_for"] == "1.2.3.4, 203.0.113.5"
+
+
+def test_render_blueprint_keeps_key_out_of_repo():
+    import yaml
+    from pathlib import Path
+    spec = yaml.safe_load((Path(__file__).resolve().parents[2] / "render.yaml").read_text())
+    env = {e["key"]: e for e in spec["services"][0]["envVars"]}
+    assert env["DEEPSEEK_API_KEY"] == {"key": "DEEPSEEK_API_KEY", "sync": False}
+    assert "$PORT" in spec["services"][0]["startCommand"]
+    assert spec["services"][0]["healthCheckPath"] == "/health"

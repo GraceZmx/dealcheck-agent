@@ -45,8 +45,8 @@ def get_guard(request: Request) -> UsageGuard:
 
 
 def get_client_ip(request: Request) -> str:
-    hops = request.app.state.guard.config.trusted_proxy_hops
-    return client_ip(request.headers, request.client.host if request.client else None, hops)
+    c = request.app.state.guard.config
+    return client_ip(request.headers, request.client.host if request.client else None, c.trusted_proxy_hops, c.client_ip_header)
 
 
 @app.middleware("http")
@@ -191,6 +191,17 @@ def status(guard: UsageGuard = Depends(get_guard), ip: str = Depends(get_client_
     settings = load_settings()
     agent_ready = settings.agent_enabled and settings.has_deepseek_key
     return {"agent_available": agent_ready, **guard.status(ip)}
+
+
+@app.get("/api/debug/ip")
+def debug_ip(request: Request, ip: str = Depends(get_client_ip)) -> dict:
+    """部署诊断：只有环境变量 DEBUG_IP=true 时可用，返回调用者自己的 IP 相关请求头，用于确定真实 IP 的来源。"""
+    if not load_settings().debug_ip:
+        raise HTTPException(status_code=404, detail="Not Found")
+    h = request.headers
+    return {"detected": ip, "peer": request.client.host if request.client else None,
+            "x_forwarded_for": h.get("x-forwarded-for"), "true_client_ip": h.get("true-client-ip"),
+            "cf_connecting_ip": h.get("cf-connecting-ip"), "x_real_ip": h.get("x-real-ip")}
 
 
 # 前端页面放在最后挂载，避免覆盖上面的接口

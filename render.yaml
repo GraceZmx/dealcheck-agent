@@ -1,0 +1,25 @@
+# Render 部署配置（Blueprint）。在 Render 后台选择 New → Blueprint 并连接本仓库即可按此创建服务。
+services:
+  - type: web
+    name: dealcheck-agent
+    runtime: python
+    plan: free
+    region: singapore          # 离 DeepSeek 接口较近，Agent 调用延迟更低
+    branch: main
+    autoDeploy: true           # 推送到 main 分支后自动重新部署
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --app-dir backend --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.5
+      - key: LLM_PROVIDER
+        value: deepseek
+      - key: SEARCH_PROVIDER
+        value: deepseek
+      - key: AGENT_ENABLED
+        value: "true"
+      - key: DEBUG_IP          # 上线后确认真实 IP 的来源，确认完改为 false
+        value: "true"
+      - key: DEEPSEEK_API_KEY  # 密钥不写进仓库：创建时由 Render 提示手动填写
+        sync: false

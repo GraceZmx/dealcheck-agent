@@ -1,0 +1,5 @@
+# 运行时依赖
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+PyYAML==6.0.3

@@ -1,0 +1,13 @@
+[project]
+name = "dealcheck-agent"
+version = "0.1.0"
+description = "AI income decision assistant that helps small creators evaluate brand deals"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
+filterwarnings = [
+    # TestClient 依赖 httpx 的弃用提示，不影响功能；以后确认替代库可靠再迁移
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]

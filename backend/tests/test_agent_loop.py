@@ -171,3 +171,15 @@ def test_trace_records_llm_and_tool_events():
     types = [t["type"] for t in result.trace]
     assert types == ["llm", "tool", "llm"]
     assert result.trace[0]["usage"]["input_tokens"] == 1000
+
+
+def test_trace_keeps_full_tool_result():
+    """BC-2：运行记录完整保存搜索摘要，不截断，内容和发给模型的一致。"""
+    summary = "Settled complaint about a creator's sponsored post. " * 20  # 约 1,000 字，低于工具自身的摘要上限
+    ctx = make_ctx(search=MockSearchProvider(
+        [SearchResult(url=f"https://site{i}.example/a", title=f"T{i}", summary=summary + ("END-OF-SUMMARY" if i == 2 else ""))
+         for i in range(3)]))
+    result, provider, _ = run([assistant("", search_call()), assistant("", submit())], ctx=ctx)
+    [tool_step] = [t for t in result.trace if t["type"] == "tool"]
+    assert len(tool_step["result"]) > 2000 and "END-OF-SUMMARY" in tool_step["result"]
+    assert tool_step["result"] == provider.calls[1]["messages"][-1].content

@@ -39,10 +39,6 @@ def to_findings(submission: AgentSubmission, ctx: ToolContext) -> AgentFindings:
     return enforce_citations(submission, ctx.registry)
 
 
-def _preview(text: str, limit: int = 300) -> str:
-    return text if len(text) <= limit else text[:limit] + "…"
-
-
 def describe_tool_call(name: str, arguments: str, ctx: ToolContext) -> dict:
     """把一次工具调用描述成给用户看的进度事件（只含真实发生的动作，不含网页内容）。"""
     try:
@@ -139,7 +135,8 @@ def run_agent(
             else:
                 emit(describe_tool_call(tc.name, tc.arguments, ctx))
                 result = execute_tool(ctx, tc)
-                trace.append({"type": "tool", "name": tc.name, "arguments": tc.arguments, "result": _preview(result)})
+                # 完整保存搜索摘要和网页正文，事后才能核对来源是否支持结论（BC-2）；trace 只写进运行记录，不发给模型
+                trace.append({"type": "tool", "name": tc.name, "arguments": tc.arguments, "result": result})
             messages.append(Message(role="tool", tool_call_id=tc.id, content=result))
 
         if submission is not None:

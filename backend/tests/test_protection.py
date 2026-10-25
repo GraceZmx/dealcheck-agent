@@ -278,3 +278,14 @@ def test_render_blueprint_keeps_key_out_of_repo():
     assert env["DEEPSEEK_API_KEY"] == {"key": "DEEPSEEK_API_KEY", "sync": False}
     assert "$PORT" in spec["services"][0]["startCommand"]
     assert spec["services"][0]["healthCheckPath"] == "/health"
+
+
+def test_render_production_ip_config():
+    """线上实测的 Render 请求头：True-Client-IP 优先；回退时取 X-Forwarded-For 右数第 3 个。"""
+    c = load_protection_config()
+    assert (c.client_ip_header, c.trusted_proxy_hops) == ("true-client-ip", 3)
+    real, forged = "155.117.198.114", "6.6.6.6"
+    render_headers = {"x-forwarded-for": f"{forged},{real}, 162.158.163.160, 10.29.8.12", "true-client-ip": real}
+    assert client_ip(render_headers, "10.29.8.12", c.trusted_proxy_hops, c.client_ip_header) == real
+    without_tci = {"x-forwarded-for": f"{forged},{real}, 162.158.163.160, 10.29.8.12"}
+    assert client_ip(without_tci, "10.29.8.12", c.trusted_proxy_hops, c.client_ip_header) == real

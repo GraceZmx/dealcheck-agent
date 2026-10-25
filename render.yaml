@@ -19,7 +19,7 @@ services:
         value: deepseek
       - key: AGENT_ENABLED
         value: "true"
-      - key: DEBUG_IP          # 上线后确认真实 IP 的来源，确认完改为 false
-        value: "true"
+      - key: DEBUG_IP          # 部署诊断接口 /api/debug/ip；真实 IP 来源已于 2026-10-25 确认，保持关闭
+        value: "false"
       - key: DEEPSEEK_API_KEY  # 密钥不写进仓库：创建时由 Render 提示手动填写
         sync: false

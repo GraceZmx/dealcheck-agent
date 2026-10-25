@@ -244,6 +244,9 @@ class CreatorProfile(BaseModel):
             raise ValueError("自由填写的拒接品类不能为空白")
         return cleaned
     rate_floor_usd: float | None = Field(None, ge=0, description="最低接单价；为空表示未设置")
+    values: list[Annotated[str, Field(min_length=1, max_length=50)]] = Field(
+        default_factory=list, max_length=10, description="价值观与偏好标签，例如 cruelty-free、sustainability"
+    )
 
 
 class DealInput(BaseModel):
@@ -293,6 +296,33 @@ class CustomCategoryMatch(BaseModel):
     source_ids: list[str] = Field(default_factory=list)
 
 
+class RiskLevel(str, Enum):
+    NONE = "none"
+    MINOR = "minor"
+    MODERATE = "moderate"
+    SEVERE = "severe"
+    INSUFFICIENT_INFO = "insufficient_info"
+
+
+class FitLevel(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+    INSUFFICIENT_INFO = "insufficient_info"
+
+
+class PeerRate(BaseModel):
+    description: str
+    amount_usd: float | None = Field(None, ge=0)
+    source_ids: list[str] = Field(default_factory=list)
+
+
+class ValuesFit(BaseModel):
+    level: FitLevel = FitLevel.INSUFFICIENT_INFO
+    summary: str = ""
+    source_ids: list[str] = Field(default_factory=list)
+
+
 class AdjustmentItem(str, Enum):
     BRAND_REPUTATION = "brand_reputation"
     VALUES_FIT = "values_fit"
@@ -306,8 +336,34 @@ class ScoreAdjustment(BaseModel):
     source_ids: list[str] = Field(default_factory=list)
 
 
+class AgentSubmission(BaseModel):
+    """Agent 通过 submit_findings 工具提交的结论。来源列表不由 Agent 填写，由程序根据登记表生成。"""
+
+    brand_entity_confirmed: bool
+    brand_summary: str = ""
+    risk_level: RiskLevel = RiskLevel.INSUFFICIENT_INFO
+    severe_flags: list[SevereFlag] = Field(default_factory=list)
+    detected_categories: list[DetectedCategory] = Field(default_factory=list)
+    custom_category_matches: list[CustomCategoryMatch] = Field(default_factory=list)
+    peer_rates: list[PeerRate] = Field(default_factory=list)
+    values_fit: ValuesFit = ValuesFit()
+    score_adjustments: list[ScoreAdjustment] = Field(default_factory=list)
+
+    def cited_source_ids(self) -> set[str]:
+        ids: set[str] = set(self.values_fit.source_ids)
+        for group in (self.severe_flags, self.detected_categories, self.custom_category_matches,
+                      self.peer_rates, self.score_adjustments):
+            for item in group:
+                ids.update(item.source_ids)
+        return ids
+
+
 class AgentFindings(BaseModel):
     brand_entity_confirmed: bool
+    brand_summary: str = ""
+    risk_level: RiskLevel = RiskLevel.INSUFFICIENT_INFO
+    peer_rates: list[PeerRate] = Field(default_factory=list)
+    values_fit: ValuesFit = ValuesFit()
     severe_flags: list[SevereFlag] = Field(default_factory=list)
     detected_categories: list[DetectedCategory] = Field(default_factory=list)
     custom_category_matches: list[CustomCategoryMatch] = Field(default_factory=list)

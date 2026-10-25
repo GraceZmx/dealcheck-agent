@@ -151,7 +151,7 @@ cd ~/dealcheck-agent && source .venv/bin/activate
 pytest                                                              # 全部测试
 uvicorn app.main:app --app-dir backend --reload                     # 本地网页 http://localhost:8000
 python scripts/evaluate.py examples/deals/2_negotiate_maya.json     # 仅规则
-python scripts/evaluate.py local/real_deals/2_glossier.json --agent # 真实 Agent 评估（约 ¥0.04）
+python scripts/evaluate.py local/real_deals/<案例>.json --agent  # 真实 Agent 评估（约 ¥0.04，案例只放本地）
 python scripts/build_benchmarks.py                                  # 重新生成基准表
 ```
 

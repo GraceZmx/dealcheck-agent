@@ -1,0 +1,22 @@
+# 打分与决策配置（对应 PRD 第 7 节）
+# 总分 = 报价合理性（0–45，见 pricing.yaml）+ 合同条款（0–35）+ 品牌与匹配（0–20）+ Agent 调分（有上限）
+
+contract:
+  max_score: 35
+  red_deduction: 10     # 每个红灯扣分
+  yellow_deduction: 4   # 每个黄灯扣分；最低扣到 0
+
+brand_fit:
+  max_score: 20
+  default_score: 12     # 没有 Agent 结果时的中性分，表示"未知"
+
+# Agent 调分：每项必须附有效来源，否则作废；超出范围的截断
+adjustments:
+  brand_reputation: {min: -8, max: 4}   # 计入品牌与匹配
+  values_fit: {min: -6, max: 4}         # 计入品牌与匹配
+  peer_rate: {min: -5, max: 5}          # 计入报价合理性
+  total_cap: 15                         # 单次评估调分合计不超过 ±15
+
+decision:
+  accept_min_score: 75     # ≥ 75 接受（未命中封顶类规则时）
+  negotiate_min_score: 50  # 50–74 谈判；< 50 拒绝

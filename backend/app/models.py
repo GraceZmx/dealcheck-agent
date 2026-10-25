@@ -200,3 +200,159 @@ class PricingResult(BaseModel):
     confidence_message: str | None = Field(None, description="低置信度时给用户的一句提示")
     data_version: str
     data_date: str
+
+
+# ---------- 创作者档案与合作信息（对应 PRD 5.2 / 5.3 节）----------
+
+
+class SensitiveCategory(str, Enum):
+    """创作者可能拒接的敏感品类。"""
+
+    ALCOHOL = "alcohol"
+    TOBACCO_VAPING = "tobacco_vaping"
+    CANNABIS = "cannabis"
+    GAMBLING = "gambling"
+    CRYPTO = "crypto"
+    WEIGHT_LOSS_SUPPLEMENTS = "weight_loss_supplements"
+    ADULT_CONTENT = "adult_content"
+    FIREARMS = "firearms"
+
+
+class CreatorProfile(BaseModel):
+    followers: dict[Platform, int] = Field(description="各平台粉丝数")
+    niche: Niche
+    blocked_categories: list[SensitiveCategory] = Field(default_factory=list, description="拒接品类")
+    rate_floor_usd: float | None = Field(None, ge=0, description="最低接单价；为空表示未设置")
+
+
+class DealInput(BaseModel):
+    brand_name: str = Field(min_length=1)
+    brand_website: str | None = None
+    brand_categories: list[SensitiveCategory] = Field(
+        default_factory=list, description="品牌涉及的敏感品类（用户在表单中勾选）"
+    )
+    deliverables: list[Deliverable] = Field(min_length=1)
+    offer_usd: float = Field(ge=0)
+    contract: ContractTerms
+    requires_upfront_payment: bool = Field(False, description="是否要求创作者预付任何费用")
+
+
+# ---------- Agent 调查结果（对应 PRD 附录 B；M1 用手工编写的模拟数据）----------
+
+
+class SourceRef(BaseModel):
+    id: str
+    url: str
+    title: str | None = None
+
+
+class SevereFlagType(str, Enum):
+    SCAM = "scam"
+    REGULATORY = "regulatory"
+    NONPAYMENT = "nonpayment"
+    SAFETY = "safety"
+
+
+class SevereFlag(BaseModel):
+    type: SevereFlagType
+    description: str
+    source_ids: list[str] = Field(default_factory=list)
+
+
+class DetectedCategory(BaseModel):
+    category: SensitiveCategory
+    source_ids: list[str] = Field(default_factory=list)
+
+
+class AdjustmentItem(str, Enum):
+    BRAND_REPUTATION = "brand_reputation"
+    VALUES_FIT = "values_fit"
+    PEER_RATE = "peer_rate"
+
+
+class ScoreAdjustment(BaseModel):
+    item: AdjustmentItem
+    delta: int
+    reason: str
+    source_ids: list[str] = Field(default_factory=list)
+
+
+class AgentFindings(BaseModel):
+    brand_entity_confirmed: bool
+    severe_flags: list[SevereFlag] = Field(default_factory=list)
+    detected_categories: list[DetectedCategory] = Field(default_factory=list)
+    score_adjustments: list[ScoreAdjustment] = Field(default_factory=list)
+    sources: list[SourceRef] = Field(default_factory=list)
+
+    @property
+    def source_map(self) -> dict[str, SourceRef]:
+        return {s.id: s for s in self.sources}
+
+
+class EvaluationRequest(BaseModel):
+    profile: CreatorProfile
+    deal: DealInput
+    agent_findings: AgentFindings | None = Field(None, description="为空表示仅规则模式")
+
+
+# ---------- 硬性规则、打分与决策结果 ----------
+
+
+class HardRuleKind(str, Enum):
+    REJECT = "reject"  # 拒绝类：直接建议拒绝
+    CAP = "cap"  # 封顶类：最多到"谈判"
+
+
+class HardRuleHit(BaseModel):
+    rule_id: str
+    kind: HardRuleKind
+    message: str
+    evidence_urls: list[str] = Field(default_factory=list)
+
+
+class AdjustmentStatus(str, Enum):
+    APPLIED = "applied"
+    CLAMPED = "clamped"  # 超出单项范围，被截断
+    VOIDED = "voided"  # 没有有效来源，按 0 计
+
+
+class AppliedAdjustment(BaseModel):
+    item: AdjustmentItem
+    requested: int
+    applied: int
+    status: AdjustmentStatus
+    reason: str
+    source_urls: list[str] = Field(default_factory=list)
+
+
+class DimensionScore(BaseModel):
+    base: int
+    adjustment: int
+    final: int
+    max: int
+
+
+class ScoreBreakdown(BaseModel):
+    pricing: DimensionScore
+    contract: DimensionScore
+    brand_fit: DimensionScore
+    adjustments: list[AppliedAdjustment]
+    total_cap_correction: int = Field(0, description="调分合计超过 ±total_cap 时的修正值；未超出时为 0")
+    total: int
+
+
+class Decision(str, Enum):
+    ACCEPT = "accept"
+    NEGOTIATE = "negotiate"
+    DECLINE = "decline"
+
+
+class EvaluationResult(BaseModel):
+    decision: Decision
+    total_score: int
+    reasons: list[str]
+    hard_rules: list[HardRuleHit]
+    score: ScoreBreakdown
+    pricing: PricingResult
+    contract: ContractCheckResult
+    brand_research_available: bool

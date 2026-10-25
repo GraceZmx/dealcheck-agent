@@ -1,0 +1,33 @@
+{
+  "_description": "谈判：Maya，Micro 级美妆博主，Instagram 28K 粉丝；报价偏低、没有撤单费、修改 3 次",
+  "profile": {
+    "followers": {"instagram": 28000},
+    "niche": "beauty",
+    "blocked_categories": [],
+    "rate_floor_usd": 250
+  },
+  "deal": {
+    "brand_name": "Glow Theory Skincare",
+    "brand_website": "https://glowtheory.example",
+    "deliverables": [{"type": "instagram_reel", "quantity": 1}],
+    "offer_usd": 450,
+    "contract": {
+      "exclusivity": {"days": 0, "scope": "none"},
+      "usage_rights": {"type": "organic"},
+      "kill_fee_percent": null,
+      "revisions": 3
+    }
+  },
+  "agent_findings": {
+    "brand_entity_confirmed": true,
+    "score_adjustments": [
+      {"item": "brand_reputation", "delta": 1, "reason": "Mostly positive creator feedback, a few complaints about slow approvals.", "source_ids": ["s1"]},
+      {"item": "values_fit", "delta": 2, "reason": "Cruelty-free brand, matching the creator's stated values.", "source_ids": ["s2"]},
+      {"item": "peer_rate", "delta": 3, "reason": "Peers seem to charge more (no source cited).", "source_ids": []}
+    ],
+    "sources": [
+      {"id": "s1", "url": "https://creatorforum.example/threads/glow-theory"},
+      {"id": "s2", "url": "https://glowtheory.example/our-promise"}
+    ]
+  }
+}

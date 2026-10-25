@@ -1,0 +1,32 @@
+{
+  "_description": "拒绝（HR-1）：Priya，健身博主，TikTok 180K 粉丝，不接酒精品牌；表单没勾选，但 Agent 有据发现品牌是酒精饮料",
+  "profile": {
+    "followers": {"tiktok": 180000},
+    "niche": "fitness_wellness",
+    "blocked_categories": ["weight_loss_supplements", "alcohol"],
+    "rate_floor_usd": 800
+  },
+  "deal": {
+    "brand_name": "Summit Sparkling",
+    "brand_website": "https://summitsparkling.example",
+    "brand_categories": [],
+    "deliverables": [{"type": "tiktok_video", "quantity": 1}],
+    "offer_usd": 1500,
+    "contract": {
+      "exclusivity": {"days": 0, "scope": "none"},
+      "usage_rights": {"type": "organic"},
+      "kill_fee_percent": 50,
+      "revisions": 2
+    }
+  },
+  "agent_findings": {
+    "brand_entity_confirmed": true,
+    "detected_categories": [{"category": "alcohol", "source_ids": ["s1"]}],
+    "score_adjustments": [
+      {"item": "values_fit", "delta": -4, "reason": "Main product is a hard seltzer, which conflicts with the creator's wellness focus.", "source_ids": ["s1"]}
+    ],
+    "sources": [
+      {"id": "s1", "url": "https://summitsparkling.example/products/hard-seltzer"}
+    ]
+  }
+}

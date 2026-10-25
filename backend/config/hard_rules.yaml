@@ -1,0 +1,8 @@
+# 硬性规则配置（对应 PRD 8.1 节）
+
+# HR-2：严重负面需要至少这么多个"独立来源"才直接建议拒绝；不足时降级为 HR-6（封顶为谈判）。
+# 独立来源按网站域名计算：同一网站的多篇文章只算 1 个（www. 前缀忽略）。
+severe_negative_min_independent_sources: 2
+
+# Agent 发现品牌实际业务涉及创作者拒接品类时（HR-1），至少需要这么多条有效来源作为证据
+detected_category_min_sources: 1

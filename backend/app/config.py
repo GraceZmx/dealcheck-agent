@@ -9,7 +9,7 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, Field, model_validator
 
-from app.models import Confidence, DeliverableType, Niche, Platform, Tier
+from app.models import AdjustmentItem, Confidence, DeliverableType, Niche, Platform, Tier
 
 CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
@@ -208,3 +208,72 @@ def load_benchmarks(path: Path | None = None) -> BenchmarkData:
     """读取市场价基准表。path 为空时读取默认的 benchmarks_v0.json。"""
     with open(path or DATA_DIR / "benchmarks_v0.json", encoding="utf-8") as f:
         return BenchmarkData.model_validate(json.load(f))
+
+
+# ---------- 硬性规则配置（hard_rules.yaml）----------
+
+
+class HardRulesConfig(BaseModel):
+    severe_negative_min_independent_sources: int = Field(ge=1)
+    detected_category_min_sources: int = Field(ge=1)
+
+
+def load_hard_rules_config(path: Path | None = None) -> HardRulesConfig:
+    return HardRulesConfig.model_validate(load_yaml(path or CONFIG_DIR / "hard_rules.yaml"))
+
+
+# ---------- 打分与决策配置（scoring.yaml）----------
+
+
+class ContractScoring(BaseModel):
+    max_score: int = Field(gt=0)
+    red_deduction: int = Field(ge=0)
+    yellow_deduction: int = Field(ge=0)
+
+
+class BrandFitScoring(BaseModel):
+    max_score: int = Field(gt=0)
+    default_score: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def _check(self):
+        if self.default_score > self.max_score:
+            raise ValueError("default_score 不能大于 max_score")
+        return self
+
+
+class AdjustmentRange(BaseModel):
+    min: int = Field(le=0)
+    max: int = Field(ge=0)
+
+
+class AdjustmentScoring(BaseModel):
+    brand_reputation: AdjustmentRange
+    values_fit: AdjustmentRange
+    peer_rate: AdjustmentRange
+    total_cap: int = Field(ge=0)
+
+    def range_for(self, item: AdjustmentItem) -> AdjustmentRange:
+        return getattr(self, item.value)
+
+
+class DecisionThresholds(BaseModel):
+    accept_min_score: int = Field(ge=0)
+    negotiate_min_score: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def _check(self):
+        if self.negotiate_min_score > self.accept_min_score:
+            raise ValueError("negotiate_min_score 不能大于 accept_min_score")
+        return self
+
+
+class ScoringConfig(BaseModel):
+    contract: ContractScoring
+    brand_fit: BrandFitScoring
+    adjustments: AdjustmentScoring
+    decision: DecisionThresholds
+
+
+def load_scoring_config(path: Path | None = None) -> ScoringConfig:
+    return ScoringConfig.model_validate(load_yaml(path or CONFIG_DIR / "scoring.yaml"))

@@ -1,0 +1,22 @@
+{
+  "_description": "拒绝（HR-3）：Leo，Nano 级科技博主，YouTube 6K 订阅；报价很高但要求先付钱买产品。仅规则模式（没有 Agent 结果）",
+  "profile": {
+    "followers": {"youtube": 6000},
+    "niche": "tech",
+    "blocked_categories": [],
+    "rate_floor_usd": null
+  },
+  "deal": {
+    "brand_name": "GadgetPro Partners",
+    "deliverables": [{"type": "youtube_integration", "quantity": 1}],
+    "offer_usd": 200,
+    "requires_upfront_payment": true,
+    "contract": {
+      "exclusivity": {"days": 0, "scope": "none"},
+      "usage_rights": {"type": "organic"},
+      "kill_fee_percent": 50,
+      "revisions": 2
+    }
+  },
+  "agent_findings": null
+}

@@ -1,0 +1,34 @@
+{
+  "_description": "谈判（HR-6）：Nano 级美食博主，Instagram 8K 粉丝；分数很高，但有一条拖欠付款的严重负面，两篇文章来自同一网站，只算 1 个来源",
+  "profile": {
+    "followers": {"instagram": 8000},
+    "niche": "food",
+    "blocked_categories": [],
+    "rate_floor_usd": null
+  },
+  "deal": {
+    "brand_name": "Crumb & Co Bakery",
+    "brand_website": "https://crumbandco.example",
+    "deliverables": [{"type": "instagram_feed_post", "quantity": 2}],
+    "offer_usd": 50,
+    "contract": {
+      "exclusivity": {"days": 0, "scope": "none"},
+      "usage_rights": {"type": "organic"},
+      "kill_fee_percent": 50,
+      "revisions": 1
+    }
+  },
+  "agent_findings": {
+    "brand_entity_confirmed": true,
+    "severe_flags": [
+      {"type": "nonpayment", "description": "Creators say the brand paid 4 months late.", "source_ids": ["s1", "s2"]}
+    ],
+    "score_adjustments": [
+      {"item": "brand_reputation", "delta": -3, "reason": "Reports of late payment to creators.", "source_ids": ["s1"]}
+    ],
+    "sources": [
+      {"id": "s1", "url": "https://creatorforum.example/threads/crumb-co-late-payment"},
+      {"id": "s2", "url": "https://www.creatorforum.example/threads/crumb-co-update"}
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "_description": "接受：Micro 级健身博主，TikTok 30K 粉丝，报价略低于基准但条款友好、品牌口碑好",
+  "profile": {
+    "followers": {"tiktok": 30000},
+    "niche": "fitness_wellness",
+    "blocked_categories": [],
+    "rate_floor_usd": 300
+  },
+  "deal": {
+    "brand_name": "PeakFuel Hydration",
+    "brand_website": "https://peakfuel.example",
+    "deliverables": [{"type": "tiktok_video", "quantity": 1}],
+    "offer_usd": 400,
+    "contract": {
+      "exclusivity": {"days": 14, "scope": "category"},
+      "usage_rights": {"type": "organic"},
+      "kill_fee_percent": 50,
+      "revisions": 2
+    }
+  },
+  "agent_findings": {
+    "brand_entity_confirmed": true,
+    "score_adjustments": [
+      {"item": "brand_reputation", "delta": 3, "reason": "Creators report on-time payment and clear briefs.", "source_ids": ["s1", "s2"]},
+      {"item": "values_fit", "delta": 2, "reason": "Brand focuses on clean-label sports drinks, matching the creator's wellness content.", "source_ids": ["s3"]}
+    ],
+    "sources": [
+      {"id": "s1", "url": "https://creatorforum.example/threads/peakfuel-review"},
+      {"id": "s2", "url": "https://influencernews.example/peakfuel-creator-program"},
+      {"id": "s3", "url": "https://peakfuel.example/about"}
+    ]
+  }
+}

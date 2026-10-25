@@ -1,0 +1,39 @@
+# Agent 配置（对应 PRD 第 8、9、10 节）
+
+model:
+  name: deepseek-flash   # 可被环境变量 LLM_MODEL 覆盖
+  # 开发阶段关闭思考模式：小实验中质量无明显差别，更快更便宜（见 docs/notes/deepseek-api.md）。M4 评测后再定。
+  thinking: false
+  reasoning_effort: low  # 仅在 thinking: true 时生效（low / high / max）
+  max_tokens: 4000       # 单次回复上限，包含思考部分
+  temperature: 0.2
+  request_timeout_seconds: 60
+  max_retries: 2         # 429 / 5xx / 超时的重试次数
+
+# 每次评估的预算（护栏 G8），由程序强制执行
+budget:
+  max_searches: 3
+  max_fetches: 3          # 和搜索分开计数
+  max_model_calls: 8      # 最后一次调用强制提交结论
+  max_seconds: 120
+  max_cost_cny: 0.50      # 超过后只允许一次收尾调用
+  max_format_retries: 1   # 结论格式错误时允许重试的次数
+
+search:
+  results_per_query: 5
+  summary_max_chars: 1500  # 实测 summary 常有 1,700–5,100 字符，截断以控制 token
+  fetch_max_chars: 6000
+  query_max_chars: 128     # DeepSeek Search 的上限
+
+# 成本计算按高峰时段价格（保守），单位 USD / 100 万 token
+pricing:
+  usd_to_cny: 7.1
+  models:
+    deepseek-flash: {input_cache_hit: 0.006, input_cache_miss: 0.30, output: 1.20}
+    deepseek-v4-pro: {input_cache_hit: 0.044, input_cache_miss: 1.32, output: 3.96}
+  search_per_request_usd: 0.00075  # 只有成功且有结果的请求计费
+  fetch_per_request_usd: 0.00075
+
+email:
+  max_tokens: 1500
+  temperature: 0.4

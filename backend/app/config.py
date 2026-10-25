@@ -278,3 +278,62 @@ class ScoringConfig(BaseModel):
 
 def load_scoring_config(path: Path | None = None) -> ScoringConfig:
     return ScoringConfig.model_validate(load_yaml(path or CONFIG_DIR / "scoring.yaml"))
+
+
+# ---------- Agent 配置（agent.yaml）----------
+
+
+class ModelSettings(BaseModel):
+    name: str
+    thinking: bool = False
+    reasoning_effort: str = "low"
+    max_tokens: int = Field(gt=0)
+    temperature: float = Field(ge=0, le=2)
+    request_timeout_seconds: float = Field(gt=0)
+    max_retries: int = Field(ge=0)
+
+
+class AgentBudget(BaseModel):
+    max_searches: int = Field(ge=0)
+    max_fetches: int = Field(ge=0)
+    max_model_calls: int = Field(ge=2)  # 至少一次调查 + 一次收尾
+    max_seconds: float = Field(gt=0)
+    max_cost_cny: float = Field(gt=0)
+    max_format_retries: int = Field(ge=0)
+
+
+class SearchSettings(BaseModel):
+    results_per_query: int = Field(ge=1, le=50)
+    summary_max_chars: int = Field(gt=0)
+    fetch_max_chars: int = Field(gt=0)
+    query_max_chars: int = Field(ge=1, le=128)
+
+
+class ModelPrice(BaseModel):
+    input_cache_hit: float = Field(ge=0)
+    input_cache_miss: float = Field(ge=0)
+    output: float = Field(ge=0)
+
+
+class PricingTable(BaseModel):
+    usd_to_cny: float = Field(gt=0)
+    models: dict[str, ModelPrice]
+    search_per_request_usd: float = Field(ge=0)
+    fetch_per_request_usd: float = Field(ge=0)
+
+
+class EmailSettings(BaseModel):
+    max_tokens: int = Field(gt=0)
+    temperature: float = Field(ge=0, le=2)
+
+
+class AgentConfig(BaseModel):
+    model: ModelSettings
+    budget: AgentBudget
+    search: SearchSettings
+    pricing: PricingTable
+    email: EmailSettings
+
+
+def load_agent_config(path: Path | None = None) -> AgentConfig:
+    return AgentConfig.model_validate(load_yaml(path or CONFIG_DIR / "agent.yaml"))

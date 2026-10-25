@@ -31,6 +31,7 @@ class Settings:
     llm_model: str | None = None
     search_provider: str = "deepseek"
     deepseek_api_key: str | None = field(default=None, repr=False)  # repr=False：打印 Settings 时不显示 Key
+    agent_enabled: bool = True  # 总开关：AGENT_ENABLED=false 时全站只用规则引擎
 
     @property
     def has_deepseek_key(self) -> bool:
@@ -49,4 +50,5 @@ def load_settings(env_file: Path | None = None) -> Settings:
         llm_model=get("LLM_MODEL"),
         search_provider=(get("SEARCH_PROVIDER") or "deepseek").lower(),
         deepseek_api_key=get("DEEPSEEK_API_KEY"),
+        agent_enabled=(get("AGENT_ENABLED") or "true").lower() not in ("false", "0", "no", "off"),
     )

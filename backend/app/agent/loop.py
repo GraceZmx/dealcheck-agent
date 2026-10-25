@@ -5,6 +5,7 @@
 """
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -13,6 +14,8 @@ from pydantic import ValidationError
 from app.agent.citations import enforce_citations
 from app.agent.prompts import build_system_prompt, build_task_message
 from app.agent.tools import SUBMIT_SPEC, TOOL_SPECS, ToolContext, execute_tool
+from app.agent.urls import clean_url
+from app.rules.evidence import domain_of
 from app.config import AgentConfig, ScoringConfig
 from app.llm.base import ChatOptions, LLMError, LLMProvider, Message
 from app.models import AgentFindings, AgentSubmission, DealInput
@@ -40,14 +43,35 @@ def _preview(text: str, limit: int = 300) -> str:
     return text if len(text) <= limit else text[:limit] + "…"
 
 
+def describe_tool_call(name: str, arguments: str, ctx: ToolContext) -> dict:
+    """把一次工具调用描述成给用户看的进度事件（只含真实发生的动作，不含网页内容）。"""
+    try:
+        args = json.loads(arguments or "{}")
+    except ValueError:
+        args = {}
+    if not isinstance(args, dict):
+        args = {}
+    if name == "web_search":
+        return {"type": "search", "query": str(args.get("query", ""))[:128]}
+    if name == "fetch_page":
+        source = ctx.registry.get(str(args.get("source_id", "")))
+        if source is None:
+            return {"type": "read", "source": None}
+        return {"type": "read", "source": {"title": source.title, "domain": domain_of(clean_url(source.url))}}
+    return {"type": "tool", "name": name}
+
+
 def run_agent(
     deal: DealInput,
     ctx: ToolContext,
     provider: LLMProvider,
     config: AgentConfig,
     scoring: ScoringConfig,
+    on_event: Callable[[dict], None] | None = None,
 ) -> AgentRun:
+    """on_event：每个真实步骤发生时回调一次（用于界面上的实时进度），不影响 Agent 行为。"""
     budget = ctx.budget
+    emit = on_event or (lambda event: None)
     options = ChatOptions(
         max_tokens=config.model.max_tokens,
         temperature=config.model.temperature,
@@ -73,6 +97,7 @@ def run_agent(
             messages.append(Message(role="user", content=FINALIZE.format(reason=reason)))
         final_mode = finalize_reason is not None
         tools = [SUBMIT_SPEC] if final_mode else [*TOOL_SPECS, SUBMIT_SPEC]
+        emit({"type": "thinking", "final": final_mode})
 
         try:
             response = provider.chat(messages, tools, options)
@@ -99,6 +124,7 @@ def run_agent(
         submission: AgentSubmission | None = None
         for tc in msg.tool_calls:
             if tc.name == SUBMIT_SPEC.name:
+                emit({"type": "submitting"})
                 try:
                     submission = AgentSubmission.model_validate_json(tc.arguments)
                     result = json.dumps({"status": "received"})
@@ -111,6 +137,7 @@ def run_agent(
             elif final_mode:
                 result = json.dumps({"error": "finalize_now", "message": "Only submit_findings is allowed now."})
             else:
+                emit(describe_tool_call(tc.name, tc.arguments, ctx))
                 result = execute_tool(ctx, tc)
                 trace.append({"type": "tool", "name": tc.name, "arguments": tc.arguments, "result": _preview(result)})
             messages.append(Message(role="tool", tool_call_id=tc.id, content=result))

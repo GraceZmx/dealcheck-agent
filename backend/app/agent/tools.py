@@ -99,7 +99,19 @@ SUBMIT_SPEC = ToolSpec(
         "properties": {
             "brand_entity_confirmed": {"type": "boolean",
                                        "description": "True only if search results clearly match the brand and website given."},
-            "brand_summary": {"type": "string"},
+            "brand_overview": {
+                "type": "object",
+                "description": "1-3 sentences per section, citing source_ids inline like (s1, s2). "
+                               "Use an empty string when nothing reliable was found for a section.",
+                "properties": {
+                    "who_they_are": {"type": "string", "description": "What the company is and sells, where it operates."},
+                    "working_with_creators": {"type": "string",
+                                              "description": "How it works with creators: payment, briefs, reported experiences."},
+                    "regulatory_and_controversies": {"type": "string",
+                                                     "description": "Regulatory actions, lawsuits, public controversies."},
+                },
+                "required": ["who_they_are", "working_with_creators", "regulatory_and_controversies"],
+            },
             "risk_level": {"type": "string", "enum": _enum(RiskLevel)},
             "severe_flags": {"type": "array", "items": {"type": "object", "properties": {
                 "type": {"type": "string", "enum": _enum(SevereFlagType)},
@@ -126,7 +138,7 @@ SUBMIT_SPEC = ToolSpec(
                 "reason": {"type": "string"},
                 "source_ids": _source_ids_schema()}, "required": ["item", "delta", "reason", "source_ids"]}},
         },
-        "required": ["brand_entity_confirmed", "brand_summary", "risk_level", "values_fit"],
+        "required": ["brand_entity_confirmed", "brand_overview", "risk_level", "values_fit"],
     },
 )
 

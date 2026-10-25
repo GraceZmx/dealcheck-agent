@@ -53,7 +53,10 @@ def enforce_citations(submission: AgentSubmission, registry: SourceRegistry) -> 
     def ids(value: list[str]) -> list[str]:
         return _clean_ids(value, registry, cited, unverified)
 
-    s.brand_summary = text(s.brand_summary)
+    o = s.brand_overview
+    o.who_they_are = text(o.who_they_are)
+    o.working_with_creators = text(o.working_with_creators)
+    o.regulatory_and_controversies = text(o.regulatory_and_controversies)
     s.values_fit.summary = text(s.values_fit.summary)
     s.values_fit.source_ids = ids(s.values_fit.source_ids)
     for f in s.severe_flags:
@@ -79,7 +82,7 @@ def enforce_citations(submission: AgentSubmission, registry: SourceRegistry) -> 
 
 def all_citations(findings: AgentFindings) -> set[str]:
     """结论里出现的全部编号（正文 + source_ids），用于校验 G12。"""
-    texts = [findings.brand_summary, findings.values_fit.summary]
+    texts = [text for _, text in findings.brand_overview.sections()] + [findings.values_fit.summary]
     texts += [f.description for f in findings.severe_flags]
     texts += [m.explanation for m in findings.custom_category_matches]
     texts += [p.description for p in findings.peer_rates]

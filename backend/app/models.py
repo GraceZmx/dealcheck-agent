@@ -323,6 +323,18 @@ class ValuesFit(BaseModel):
     source_ids: list[str] = Field(default_factory=list)
 
 
+class BrandOverview(BaseModel):
+    """品牌调查摘要，按固定小节组织（每节 1–3 句，保留来源编号）。"""
+
+    who_they_are: str = ""
+    working_with_creators: str = ""
+    regulatory_and_controversies: str = ""
+
+    def sections(self) -> list[tuple[str, str]]:
+        return [("Who they are", self.who_they_are), ("Working with creators", self.working_with_creators),
+                ("Regulatory & controversies", self.regulatory_and_controversies)]
+
+
 class AdjustmentItem(str, Enum):
     BRAND_REPUTATION = "brand_reputation"
     VALUES_FIT = "values_fit"
@@ -340,7 +352,7 @@ class AgentSubmission(BaseModel):
     """Agent 通过 submit_findings 工具提交的结论。来源列表不由 Agent 填写，由程序根据登记表生成。"""
 
     brand_entity_confirmed: bool
-    brand_summary: str = ""
+    brand_overview: BrandOverview = BrandOverview()
     risk_level: RiskLevel = RiskLevel.INSUFFICIENT_INFO
     severe_flags: list[SevereFlag] = Field(default_factory=list)
     detected_categories: list[DetectedCategory] = Field(default_factory=list)
@@ -352,7 +364,7 @@ class AgentSubmission(BaseModel):
 
 class AgentFindings(BaseModel):
     brand_entity_confirmed: bool
-    brand_summary: str = ""
+    brand_overview: BrandOverview = BrandOverview()
     risk_level: RiskLevel = RiskLevel.INSUFFICIENT_INFO
     peer_rates: list[PeerRate] = Field(default_factory=list)
     values_fit: ValuesFit = ValuesFit()

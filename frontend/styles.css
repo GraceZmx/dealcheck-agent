@@ -256,6 +256,16 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
 .decision-word.accept { color: var(--green); }
 .decision-word.negotiate { color: var(--yellow); }
 .decision-word.decline { color: var(--red); }
+.decision-word.pending { color: var(--muted); font-size: 34px; }
+
+.settled { list-style: none; margin: 12px 0 0; padding: 0; }
+.settled li { display: grid; grid-template-columns: 80px 1fr auto; gap: 10px; padding: 9px 0; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+.settled li:first-child { border-top: none; }
+.settled .k { color: var(--text); font-weight: 500; }
+
+.overview { display: flex; flex-direction: column; gap: 12px; }
+.ov .label { margin-bottom: 4px; }
+.ov p { margin: 0; }
 
 .score { text-align: right; }
 .score-num { font-family: var(--mono); font-size: 30px; font-weight: 500; line-height: 1; }

@@ -15,7 +15,7 @@ from tests.test_engine import EXAMPLES
 
 SUBMIT = {
     "brand_entity_confirmed": True,
-    "brand_summary": "Skincare brand.",
+    "brand_overview": {"who_they_are": "Skincare brand (s1)."},
     "risk_level": "minor",
     "values_fit": {"level": "high", "summary": "Cruelty-free.", "source_ids": ["s2"]},
     "score_adjustments": [{"item": "brand_reputation", "delta": 2, "reason": "Pays on time.", "source_ids": ["s1"]}],

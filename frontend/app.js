@@ -26,6 +26,8 @@ const DELIVERABLES = [
 ];
 
 const TERM_NAMES = { exclusivity: "Exclusivity", usage_rights: "Usage rights", kill_fee: "Kill fee", revisions: "Revisions" };
+const ADJUSTMENT_NAMES = { brand_reputation: "Brand reputation", values_fit: "Values fit", peer_rate: "Peer rates" };
+const FLAG_NAMES = { scam: "Scam allegations", regulatory: "Regulatory action", nonpayment: "Non-payment", safety: "Product safety" };
 const POSITION = { below_p25: "Below market", p25_to_p50: "Lower half", p50_to_p75: "Upper half", above_p75: "Above market" };
 const SIGNATURE_PLACEHOLDER = "[Your name]";
 
@@ -517,7 +519,33 @@ function modeBanner(run) {
   return msg ? `<div class="banner warn"><div><strong>${esc(msg[0])}</strong> ${esc(msg[1])}</div></div>` : "";
 }
 
-function decisionCard(ev, idMap, preliminary) {
+// 结论是否已经确定：调查完成；或预检已命中拒绝类规则（Agent 只会增加、不会撤销拒绝）；或已确认是仅规则模式。
+function isSettled(run, ev) {
+  if (run.phase === "done") return true;
+  if (ev.hard_rules.some((h) => h.kind === "reject")) return true;
+  return run.steps.some((e) => e.type === "agent_unavailable" || e.type === "agent_skipped");
+}
+
+function pendingCard(ev) {
+  const p = ev.pricing;
+  const c = ev.contract;
+  const caps = ev.hard_rules.filter((h) => h.kind === "cap");
+  const contractText = c.red_count || c.yellow_count
+    ? `${c.red_count} high-risk and ${c.yellow_count} medium-risk term${c.red_count + c.yellow_count > 1 ? "s" : ""}` : "All terms within typical ranges";
+  return `
+  <section class="card decision">
+    <div class="card-head"><span class="label">Recommendation</span><span class="tag tag-sourced">Waiting for brand research</span></div>
+    <p class="decision-word pending">Checking the brand…</p>
+    <p class="muted" style="margin:12px 0 0">The recommendation depends on brand research, which usually takes 10–20 seconds. Already settled by the rules:</p>
+    <ul class="settled">
+      <li><span class="k">Pricing</span><span>Offer is ${Math.round(p.offer_ratio * 100)}% of the typical rate</span><span class="mono">${ev.score.pricing.final}/${ev.score.pricing.max}</span></li>
+      <li><span class="k">Contract</span><span>${contractText}</span><span class="mono">${ev.score.contract.final}/${ev.score.contract.max}</span></li>
+    </ul>
+    ${caps.length ? `<div class="rule-box cap"><div class="label">Fix before accepting</div>${caps.map((h) => `<p class="rule-item"><span class="rule-id">${esc(h.rule_id)}</span>${esc(h.message)}</p>`).join("")}</div>` : ""}
+  </section>`;
+}
+
+function decisionCard(ev, idMap) {
   const rejects = ev.hard_rules.filter((h) => h.kind === "reject");
   const caps = ev.hard_rules.filter((h) => h.kind === "cap");
   const overridden = rejects.length > 0;
@@ -526,8 +554,7 @@ function decisionCard(ev, idMap, preliminary) {
     ? `Score alone suggests Accept — capped at Negotiate by ${caps.map((h) => h.rule_id).join(", ")}` : "";
   const ruleItems = (hits) => hits.map((h) => `<p class="rule-item"><span class="rule-id">${esc(h.rule_id)}</span>${cite(h.message, idMap)}</p>`).join("");
   const capMessages = new Set(caps.map((h) => h.message));
-  // 调查进行中时，"品牌调查不可用"这条理由还不成立，先不显示
-  const reasons = overridden ? [] : ev.reasons.filter((r) => !capMessages.has(r) && !(preliminary && r.startsWith("Brand research is not available")));
+  const reasons = overridden ? [] : ev.reasons.filter((r) => !capMessages.has(r));
   return `
   <section class="card decision">
     <div class="card-head"><span class="label">Recommendation</span>
@@ -535,7 +562,6 @@ function decisionCard(ev, idMap, preliminary) {
     <div class="decision-top">
       <div>
         <p class="decision-word ${ev.decision}">${words[ev.decision]}</p>
-        ${preliminary ? '<p class="hint" style="margin:8px 0 0">Preliminary — brand research is still running and may change this.</p>' : ""}
       </div>
       <div class="score ${overridden ? "overridden" : ""}">
         <div class="score-num">${ev.total_score}<small>/100</small></div>
@@ -629,6 +655,12 @@ function contractCard(ev) {
   </section>`;
 }
 
+function overviewSections(f) {
+  const o = f.brand_overview || { who_they_are: f.brand_summary || "" };  // 兼容旧版本保存在本地的报告
+  return [["Who they are", o.who_they_are], ["Working with creators", o.working_with_creators],
+    ["Regulatory &amp; controversies", o.regulatory_and_controversies]];
+}
+
 function researchCard(run, ev, idMap) {
   if (run.phase !== "done") {
     return `<section class="card"><div class="card-head"><span class="label">Brand research</span><span class="tag tag-sourced">In progress</span></div><p class="muted" style="margin:0">Results appear here when the research finishes.</p></section>`;
@@ -645,17 +677,18 @@ function researchCard(run, ev, idMap) {
   <section class="card research">
     <div class="card-head"><span class="label">Brand research</span>
       <span class="tags">${sourced ? '<span class="tag tag-sourced">Sourced</span>' : '<span class="tag tag-insufficient">Insufficient info</span>'}</span></div>
-    <p>${f.brand_summary ? cite(f.brand_summary, idMap) : '<span class="muted">No reliable information was found about this brand.</span>'}</p>
+    <div class="overview">${overviewSections(f).map(([title, text]) => `
+      <div class="ov"><div class="label">${title}</div><p>${text ? cite(text, idMap) : '<span class="muted">Nothing reliable found.</span>'}</p></div>`).join("")}</div>
     <div class="facts">
       <div class="fact"><div class="label">Brand identity</div><div class="v">${f.brand_entity_confirmed ? "Confirmed" : '<span class="tag tag-insufficient">Not confirmed</span>'}</div></div>
       <div class="fact"><div class="label">Risk level</div><div class="v">${level(f.risk_level)}</div></div>
       <div class="fact"><div class="label">Values fit</div><div class="v">${level(f.values_fit.level)}</div></div>
     </div>
     ${f.values_fit.summary ? `<p class="muted">${cite(f.values_fit.summary, idMap)}</p>` : ""}
-    ${f.severe_flags.length ? `<div class="label" style="margin-top:14px">Serious issues reported</div><ul class="sublist">${f.severe_flags.map((x) => `<li><span class="k">${esc(x.type)}</span> — ${cite(x.description, idMap)}</li>`).join("")}</ul>` : ""}
+    ${f.severe_flags.length ? `<div class="label" style="margin-top:14px">Serious issues reported</div><ul class="sublist">${f.severe_flags.map((x) => `<li><span class="k">${esc(FLAG_NAMES[x.type] || x.type)}</span> — ${cite(x.description, idMap)}</li>`).join("")}</ul>` : ""}
     ${f.peer_rates.length ? `<div class="label" style="margin-top:14px">What comparable creators report</div><ul class="sublist">${f.peer_rates.map((x) => `<li>${cite(x.description, idMap)}</li>`).join("")}</ul>` : ""}
     ${adjustments.length ? `<div class="label" style="margin-top:14px">Score adjustments from research</div><ul class="sublist">${adjustments.map((a) => `
-      <li><span class="k">${esc(a.item.replace("_", " "))}</span> <span class="delta ${a.applied > 0 ? "pos" : a.applied < 0 ? "neg" : ""}">${a.applied > 0 ? "+" : ""}${a.applied}</span>
+      <li><span class="k">${esc(ADJUSTMENT_NAMES[a.item] || a.item)}</span> <span class="delta ${a.applied > 0 ? "pos" : a.applied < 0 ? "neg" : ""}">${a.applied > 0 ? "+" : ""}${a.applied}</span>
       ${a.status === "voided" ? ' <span class="status-voided">Not counted — no valid source</span>' : a.status === "clamped" ? ` <span class="hint">(requested ${a.requested}, capped)</span>` : ""}
       <br>${cite(a.reason, idMap)}</li>`).join("")}</ul>` : ""}
     ${f.unverified_citations.length ? `<p class="hint" style="margin-top:12px">${f.unverified_citations.length} citation${f.unverified_citations.length > 1 ? "s" : ""} could not be matched to a source and ${f.unverified_citations.length > 1 ? "were" : "was"} removed (marked <span class="unverified">unverified</span>).</p>` : ""}
@@ -713,10 +746,9 @@ function reportPage() {
   const ev = (run.full && run.full.evaluation) || run.rules;
   const sources = (run.full && run.full.sources) || [];
   const idMap = Object.fromEntries(sources.map((s, i) => [s.id, i + 1]));
-  const preliminary = run.phase !== "done";
   return head + `<div class="stack">
     ${modeBanner(run)}
-    ${decisionCard(ev, idMap, preliminary)}
+    ${isSettled(run, ev) ? decisionCard(ev, idMap) : pendingCard(ev)}
     ${progressCard()}
     ${priceCard(ev, run.request)}
     ${scoreCard(ev)}

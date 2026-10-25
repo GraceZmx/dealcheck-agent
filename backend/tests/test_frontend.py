@@ -40,3 +40,18 @@ def test_no_send_button_in_frontend():
     js = (FRONTEND / "app.js").read_text(encoding="utf-8").lower()
     assert "send email" not in js and "mailto:" not in js
     assert "never sends emails" in js
+
+
+def test_no_verdict_while_research_is_running():
+    """调查进行中显示中性状态；只有调查完成、预检命中拒绝类规则或仅规则模式时才显示结论。"""
+    js = (FRONTEND / "app.js").read_text(encoding="utf-8")
+    assert "Checking the brand…" in js
+    assert "isSettled(run, ev) ? decisionCard(ev, idMap) : pendingCard(ev)" in js
+    settled = re.search(r"function isSettled\(run, ev\) \{(.*?)\n\}", js, re.S).group(1)
+    assert 'run.phase === "done"' in settled and '"reject"' in settled and "agent_unavailable" in settled
+
+
+def test_readable_adjustment_names():
+    js = (FRONTEND / "app.js").read_text(encoding="utf-8")
+    assert 'brand_reputation: "Brand reputation", values_fit: "Values fit", peer_rate: "Peer rates"' in js
+    assert 'a.item.replace("_", " ")' not in js

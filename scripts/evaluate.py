@@ -60,8 +60,10 @@ def run_agent_mode(raw: dict, as_json: bool) -> None:
     print(f"  model {a.model} | {u['model_calls']} model calls, {u['searches']} searches, {u['fetches']} page reads"
           f" | {u['input_tokens']:,} in / {u['output_tokens']:,} out tokens (reasoning {u['reasoning_tokens']:,})")
     print(f"  cost ¥{u['cost_cny']:.4f} (${u['cost_usd']:.5f}) | {u['elapsed_seconds']:.1f}s")
-    if full.findings and full.findings.brand_summary:
-        print(f"\nBrand summary: {full.findings.brand_summary}")
+    if full.findings:
+        print("\nBrand research")
+        for title, text in full.findings.brand_overview.sections():
+            print(f"  {title}: {text or '(nothing reliable found)'}")
     if full.sources:
         print("\nSources")
         for src in full.sources:

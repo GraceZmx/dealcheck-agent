@@ -74,6 +74,7 @@ def main() -> None:
     parser.add_argument("--agent", type=Path, required=True)
     parser.add_argument("--hybrid", type=Path, required=True)
     parser.add_argument("--out", type=Path, default=ROOT / "local" / "eval" / "results" / "report.md")
+    parser.add_argument("--reasons", type=Path, default=REASONS, help="人工错题原因文件；不存在时用自动草稿")
     args = parser.parse_args()
 
     cases = load_cases([d for d in CASE_DIRS if d.exists()])
@@ -86,8 +87,11 @@ def main() -> None:
               f"每个案例 {r['meta']['repeats']} 次" for n, r in runs.items()]
     total_cost = sum(sum(g["cost_cny"] for gs in r["grades"].values() for g in gs) for r in runs.values())
     judge_cost = sum((r["source_summary"] or {}).get("cost_cny", 0) for r in runs.values())
+    history = [h for c in cases for h in c["label"].get("history", [])]
+    after_run = sum(1 for h in history if h.get("after_seeing_output"))
     lines += [f"- 评测运行花费合计 ¥{total_cost:.2f}，来源检查（LLM 评审）¥{judge_cost:.2f}",
-              f"- 标签修改记录：{sum(len(c['label'].get('history', [])) for c in cases)} 条（全部在第一次运行之前）",
+              f"- 标签修改记录：{len(history)} 条（第一次运行之前 {len(history) - after_run} 条，"
+              f"看过系统输出之后 {after_run} 条）",
               "- **测试组只有 10 个案例，结果是方向性的。**", ""]
 
     lines += ["## 1. 三组对比", "",
@@ -122,7 +126,7 @@ def main() -> None:
 
     lines += ["## 2. 错题清单（混合）", "", "| 题号 | 组 | 我的答案 | 系统答案（3 次） | 一句话原因 |", "|---|---|---|---|---|"]
     hybrid = runs["hybrid"]
-    manual = json.loads(REASONS.read_text(encoding="utf-8")) if REASONS.exists() else {}
+    manual = json.loads(args.reasons.read_text(encoding="utf-8")) if args.reasons.exists() else {}
     for cid, gs in hybrid["grades"].items():
         if all(g["decision_ok"] for g in gs):
             continue

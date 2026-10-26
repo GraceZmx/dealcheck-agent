@@ -5,8 +5,9 @@
 封顶类（命中后最多到"谈判"）：
     HR-4 有红灯条款    HR-5 报价低于最低接单价    HR-6 严重负面只有单一来源    HR-7 无法确认品牌实体
     HR-8 品牌可能涉及创作者自由填写的拒接品类（Agent 语义判断，需用户自行核实）
+    HR-9 品牌和创作者的价值观明显冲突（Agent 语义判断，需用户自行核实）
 
-HR-2 / HR-6 / HR-7 / HR-8 的证据来自 Agent，判定逻辑在这里，由规则决定是否命中。
+HR-2 / HR-6 / HR-7 / HR-8 / HR-9 的证据来自 Agent，判定逻辑在这里，由规则决定是否命中。
 """
 
 from app.config import HardRulesConfig, load_hard_rules_config
@@ -15,6 +16,7 @@ from app.models import (
     ContractCheckResult,
     CreatorProfile,
     DealInput,
+    FitLevel,
     HardRuleHit,
     HardRuleKind,
     Light,
@@ -147,6 +149,21 @@ def check_custom_categories(
     return hits
 
 
+def check_values_conflict(findings: AgentFindings | None, config: HardRulesConfig) -> list[HardRuleHit]:
+    """HR-9：Agent 有据判断品牌和创作者的价值观明显冲突（values_fit 为 low）。"""
+    if not findings or findings.values_fit.level != FitLevel.LOW:
+        return []
+    urls = resolve_urls(findings.values_fit.source_ids, findings)
+    if len(urls) < config.values_conflict_min_sources:
+        return []
+    return [HardRuleHit(
+        rule_id="HR-9", kind=CAP,
+        message=f"This brand may conflict with your stated values: {findings.values_fit.summary} "
+                "This is an automated judgment, so please verify it yourself.",
+        evidence_urls=urls,
+    )]
+
+
 def evaluate_hard_rules(
     profile: CreatorProfile,
     deal: DealInput,
@@ -164,5 +181,6 @@ def evaluate_hard_rules(
         + check_rate_floor(profile, deal)
         + check_brand_entity(findings)
         + check_custom_categories(profile, findings, config)
+        + check_values_conflict(findings, config)
     )
     return sorted(hits, key=lambda h: int(h.rule_id.split("-")[1]))

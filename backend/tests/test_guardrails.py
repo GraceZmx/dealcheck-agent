@@ -192,6 +192,21 @@ def test_prompt_forbids_double_counting_blocked_categories():
     assert "do NOT lower values_fit or brand_reputation because the brand is in a category the creator blocks" in prompt
 
 
+def test_prompt_excludes_investigations_from_severe_flags():
+    """调查、通知、未判决的诉讼不算严重负面，否则凑够 2 个来源就会误触发 HR-2。"""
+    from app.agent.prompts import build_system_prompt
+    prompt = build_system_prompt(load_agent_config().budget, load_scoring_config())
+    assert "Investigations, inquiries, warning or 60-day notices (e.g. Prop 65), and lawsuits" in prompt
+    assert "are NOT severe flags" in prompt
+
+
+def test_prompt_defines_low_values_fit_as_clear_conflict():
+    """values_fit 为 low 会触发 HR-9，所以 low 只能表示明显冲突，不能表示"不相关"。"""
+    from app.agent.prompts import build_system_prompt
+    prompt = build_system_prompt(load_agent_config().budget, load_scoring_config())
+    assert "Use \"low\" only for a clear conflict, not because the brand is unrelated" in prompt
+
+
 def test_brand_overview_sections_required_in_submit_schema():
     from app.agent.tools import SUBMIT_SPEC
     overview = SUBMIT_SPEC.parameters["properties"]["brand_overview"]

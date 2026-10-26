@@ -3,6 +3,7 @@
 import copy
 import importlib.util
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -229,6 +230,38 @@ def test_rescore_uses_saved_results(run_eval, monkeypatch, tmp_path):
 
     assert rescore_with(got) == 1
     assert rescore_with(next(d for d in ("accept", "negotiate", "decline") if d != got)) == 0
+
+
+def test_compare_runs_flags_cases_that_got_worse(run_eval, monkeypatch, tmp_path):
+    """两轮对比：同一题答对次数变少时标 ↓，指标按校准组 / 测试组分开列。"""
+    monkeypatch.setattr("sys.argv", ["run_eval.py"])
+    run_eval.main()
+    (old,) = (tmp_path / "runs").iterdir()
+    summary = json.loads((old / "summary.json").read_text(encoding="utf-8"))
+    summary["grades"]["F91"][0]["decision_ok"] = True  # 旧一轮答对
+    (old / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+    new = tmp_path / "runs_new"
+    shutil.copytree(old, new)
+    path = run_eval.CASE_DIRS[0] / "F91.json"
+    case = json.loads(path.read_text(encoding="utf-8"))
+    got = json.loads((old / "results" / "F91-1.json").read_text(encoding="utf-8"))["result"]["evaluation"]["decision"]
+    summary = json.loads((new / "summary.json").read_text(encoding="utf-8"))
+    summary["grades"]["F91"][0]["decision_ok"] = False  # 模拟新一轮答错
+    summary["grades"]["F91"][0]["decision"] = next(d for d in ("accept", "negotiate", "decline") if d != got)
+    (new / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
+
+    spec = importlib.util.spec_from_file_location("compare_runs", SCRIPT.parent / "compare_runs.py")
+    compare = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(compare)
+    monkeypatch.setattr(compare, "CASE_DIRS", run_eval.CASE_DIRS)
+    out = tmp_path / "compare.md"
+    monkeypatch.setattr("sys.argv", ["compare_runs.py", "--old", f"rules_only={old}", "--new", f"rules_only={new}",
+                                     "--out", str(out)])
+    compare.main()
+    report = out.read_text(encoding="utf-8")
+    assert "F91 ↓" in report and "| 1/1 | 0/1 |" in report
+    assert "校准组" in report and "测试组" in report
+    assert case["deal"]["brand_name"] not in report
 
 
 def test_hybrid_requires_confirmation(run_eval, monkeypatch):

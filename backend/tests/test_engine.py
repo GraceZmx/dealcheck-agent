@@ -113,3 +113,13 @@ def test_hr8_caps_high_score_at_negotiate():
     assert result.total_score == 87
     assert result.decision == Decision.NEGOTIATE
     assert [h.rule_id for h in result.hard_rules] == ["HR-8"]
+
+
+def test_hr9_caps_high_score_at_negotiate():
+    """价值观明显冲突（values_fit 为 low 且有来源）：87 分也只到"谈判"，不直接拒绝。"""
+    raw = load_example("1_accept_fitness_tiktok.json").model_dump(mode="json")
+    raw["agent_findings"]["values_fit"] = {"level": "low", "summary": "The brand conflicts with the creator's values.",
+                                           "source_ids": ["s3"]}
+    result = evaluate_deal(EvaluationRequest.model_validate(raw))
+    assert result.decision == Decision.NEGOTIATE
+    assert "HR-9" in [h.rule_id for h in result.hard_rules]

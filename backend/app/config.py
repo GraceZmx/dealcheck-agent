@@ -217,6 +217,7 @@ class HardRulesConfig(BaseModel):
     severe_negative_min_independent_sources: int = Field(ge=1)
     detected_category_min_sources: int = Field(ge=1)
     custom_category_min_sources: int = Field(ge=1)
+    values_conflict_min_sources: int = Field(ge=1)
 
 
 def load_hard_rules_config(path: Path | None = None) -> HardRulesConfig:

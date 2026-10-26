@@ -10,3 +10,7 @@ detected_category_min_sources: 1
 # HR-8：Agent 判断品牌和创作者"其他（自由填写）"的拒接品类语义相符时，至少需要这么多条有效来源。
 # 语义判断可靠性较低，所以只封顶为谈判，不直接拒绝。
 custom_category_min_sources: 1
+
+# HR-9：Agent 判断品牌和创作者的价值观明显冲突（values_fit 为 low）时，至少需要这么多条有效来源。
+# 同样是语义判断，所以只封顶为谈判，不直接拒绝（标注准则："明显冲突 → 至少谈判"）。
+values_conflict_min_sources: 1

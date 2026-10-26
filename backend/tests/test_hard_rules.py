@@ -1,4 +1,4 @@
-"""硬性规则测试：HR-1 ~ HR-7 的命中与不命中。HR-2 / HR-6 / HR-7 用模拟的 Agent 结果。"""
+"""硬性规则测试：HR-1 ~ HR-9 的命中与不命中。HR-2 / HR-6 / HR-7 / HR-8 / HR-9 用模拟的 Agent 结果。"""
 
 import pytest
 from pydantic import ValidationError
@@ -319,3 +319,37 @@ def test_blocked_custom_validation(bad):
 
 def test_blocked_custom_is_trimmed():
     assert profile(blocked_custom=["  Energy drinks "]).blocked_custom == ["Energy drinks"]
+
+
+# ---------- HR-9 价值观明显冲突 ----------
+
+
+def _values(level, source_ids=("b1",)):
+    return {"level": level, "summary": "Sources report the brand tests on animals.", "source_ids": list(source_ids)}
+
+
+def test_hr9_low_values_fit_with_source_caps():
+    hits = run(f=findings(values_fit=_values("low")))
+    assert ids(hits) == ["HR-9"] and hits[0].kind == CAP
+    assert "tests on animals" in hits[0].message and "verify it yourself" in hits[0].message
+    assert hits[0].evidence_urls == ["https://news-b.example/report"]
+
+
+@pytest.mark.parametrize("level", ["high", "medium", "insufficient_info"])
+def test_hr9_not_triggered_unless_low(level):
+    assert run(f=findings(values_fit=_values(level))) == []
+
+
+@pytest.mark.parametrize("source_ids", [(), ("missing",), ("bad",)])
+def test_hr9_without_valid_source_is_ignored(source_ids):
+    assert run(f=findings(values_fit=_values("low", source_ids))) == []
+
+
+def test_hr9_not_triggered_in_rules_only_mode():
+    assert run(f=None) == []
+
+
+def test_hr9_min_sources_comes_from_config(hr_config):
+    stricter = hr_config.model_copy(update={"values_conflict_min_sources": 2})
+    assert run(f=findings(values_fit=_values("low")), config=stricter) == []
+    assert ids(run(f=findings(values_fit=_values("low", ("a1", "b1"))), config=stricter)) == ["HR-9"]

@@ -1,0 +1,118 @@
+{
+  "case": {
+    "id": "F02",
+    "category": "decline",
+    "brand_kind": "fictional",
+    "description": "报价刚好在\"离谱\"线附近（略高于区间下限一半），条款大致正常（撤单费 25%）",
+    "eval_date": "2026-10-26",
+    "split": "test"
+  },
+  "profile": {
+    "followers": {
+      "instagram": 30000
+    },
+    "niche": "food",
+    "blocked_categories": [],
+    "blocked_custom": [],
+    "rate_floor_usd": 200,
+    "values": [
+      "weeknight dinners"
+    ]
+  },
+  "deal": {
+    "brand_name": "Hearthloaf Pantry",
+    "brand_website": "https://hearthloafpantry.example",
+    "brand_categories": [],
+    "deliverables": [
+      {
+        "type": "instagram_reel",
+        "quantity": 1
+      },
+      {
+        "type": "instagram_feed_post",
+        "quantity": 1
+      }
+    ],
+    "offer_usd": 230,
+    "contract": {
+      "exclusivity": {
+        "days": 0,
+        "scope": "none"
+      },
+      "usage_rights": {
+        "type": "organic",
+        "duration_days": null,
+        "perpetual": false,
+        "paid_usage_billed_separately": false
+      },
+      "kill_fee_percent": 25,
+      "revisions": 2
+    },
+    "requires_upfront_payment": false
+  },
+  "expected": {
+    "decision": "negotiate",
+    "hard_rules": {
+      "must_hit": [
+        "HR-7"
+      ],
+      "must_not_hit": [
+        "HR-2"
+      ]
+    },
+    "brand_entity": {
+      "should_confirm": false,
+      "confusable_with": []
+    },
+    "key_risks": [
+      {
+        "id": "unverifiable_brand",
+        "desc": "品牌小、搜不到，安全不一定有保障",
+        "check": {
+          "type": "hard_rule",
+          "rule": "HR-7"
+        }
+      },
+      {
+        "id": "low_offer",
+        "desc": "给钱少，低于行业最低",
+        "check": {
+          "type": "pricing_position",
+          "position": "below_p25"
+        }
+      }
+    ],
+    "must_not_claim": [
+      "品牌有诈骗、拖欠付款、召回等负面记录（没有任何来源）"
+    ]
+  },
+  "label": {
+    "labeled_at": "2026-10-26",
+    "labeled_before_first_run": true,
+    "confidence": "high",
+    "boundary": false,
+    "rationale": "品牌太小了都搜不到，不能保证食品一定安全，出了问题受影响的是你自己的brand，而且给的钱太少了，低于行业最低",
+    "relabel": {
+      "at": null,
+      "decision": null,
+      "confidence": null
+    },
+    "second_opinion": {
+      "by": "deepseek-v4-pro",
+      "at": "2026-10-26",
+      "decision": "negotiate",
+      "confidence": "high",
+      "note": "这条先别直接签：Hearthloaf Pantry 公开信息几乎查不到，官网域名还是 .example，得先让对方提供公司主体、注册信息或可核实的过往合作。报价 $230 做两条内容也远低于市场区间（合计约 $450–$1,045），至少要谈到区间下限以上。合同没有大坑，如果品牌能核实、价格能谈上来，可以接。 风险：品牌公开信息缺失，疑似未运营或不真实，存在骗稿/骗内容风险；报价显著低于市场价，两条内容合计仅 $230；撤单费只有 25%，中途取消可能覆盖不了创作成本；.example 域名并非正常商业官网，需进一步核实"
+    },
+    "history": [
+      {
+        "at": "2026-10-26",
+        "field": "expected.decision",
+        "from": "decline",
+        "to": "negotiate",
+        "reason": "模型盲标分歧复核，按标注准则修正",
+        "after_seeing_output": false
+      }
+    ]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "case": {
+    "id": "F01",
+    "category": "decline",
+    "brand_kind": "fictional",
+    "description": "报价离谱 + 永久付费投放 + 没有撤单费 + 修改 4 次，总分低于 50",
+    "eval_date": "2026-10-26",
+    "split": "dev"
+  },
+  "profile": {
+    "followers": {
+      "youtube": 6000
+    },
+    "niche": "tech",
+    "blocked_categories": [],
+    "blocked_custom": [],
+    "rate_floor_usd": null,
+    "values": [
+      "budget tech"
+    ]
+  },
+  "deal": {
+    "brand_name": "Quillmark Audio",
+    "brand_website": "https://quillmarkaudio.example",
+    "brand_categories": [],
+    "deliverables": [
+      {
+        "type": "youtube_dedicated",
+        "quantity": 1
+      }
+    ],
+    "offer_usd": 25,
+    "contract": {
+      "exclusivity": {
+        "days": 60,
+        "scope": "category"
+      },
+      "usage_rights": {
+        "type": "paid_ads",
+        "duration_days": null,
+        "perpetual": true,
+        "paid_usage_billed_separately": false
+      },
+      "kill_fee_percent": null,
+      "revisions": 4
+    },
+    "requires_upfront_payment": false
+  },
+  "expected": {
+    "decision": "decline",
+    "hard_rules": {
+      "must_hit": [
+        "HR-4",
+        "HR-7"
+      ],
+      "must_not_hit": [
+        "HR-2"
+      ]
+    },
+    "brand_entity": {
+      "should_confirm": false,
+      "confusable_with": []
+    },
+    "key_risks": [
+      {
+        "id": "unverifiable_brand",
+        "desc": "网页搜索没有找到这个品牌名的任何公开信息",
+        "check": {
+          "type": "hard_rule",
+          "rule": "HR-7"
+        }
+      },
+      {
+        "id": "low_offer",
+        "desc": "给的低（来自理由）",
+        "check": {
+          "type": "pricing_position",
+          "position": "below_p25"
+        }
+      }
+    ],
+    "must_not_claim": [
+      "品牌有诈骗、拖欠付款、召回等负面记录（没有任何来源）"
+    ]
+  },
+  "label": {
+    "labeled_at": "2026-10-26",
+    "labeled_before_first_run": true,
+    "confidence": "high",
+    "boundary": false,
+    "rationale": "给的低，而且品牌都搜不到",
+    "relabel": {
+      "at": null,
+      "decision": null,
+      "confidence": null
+    },
+    "second_opinion": {
+      "by": "deepseek-v4-pro",
+      "at": "2026-10-26",
+      "decision": "decline",
+      "confidence": "high",
+      "note": "这个报价 $25 远低于市场区间下限 $60，而且品牌方要永久使用你的内容投广告还不另付钱，合同里也没撤单费，再加上网上完全查不到这个品牌，整体看没诚意，建议别浪费时间。 风险：报价远低于市场价，正常还价很难追上；品牌无公开信息，无法核实公司背景；永久广告使用权且不另付费；合同没有撤单费，品牌临时取消会白干"
+    },
+    "history": []
+  }
+}

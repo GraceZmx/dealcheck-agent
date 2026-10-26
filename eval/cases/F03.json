@@ -1,0 +1,97 @@
+{
+  "case": {
+    "id": "F03",
+    "category": "hard_rule",
+    "brand_kind": "fictional",
+    "description": "HR-1：创作者拒接赌博，表单也选了赌博；报价和条款都很诱人",
+    "eval_date": "2026-10-26",
+    "split": "dev"
+  },
+  "profile": {
+    "followers": {
+      "youtube": 75000
+    },
+    "niche": "gaming",
+    "blocked_categories": [
+      "gambling"
+    ],
+    "blocked_custom": [],
+    "rate_floor_usd": 600,
+    "values": [
+      "family-friendly gaming"
+    ]
+  },
+  "deal": {
+    "brand_name": "Stakeforge Sportsbook",
+    "brand_website": "https://stakeforge.example",
+    "brand_categories": [
+      "gambling"
+    ],
+    "deliverables": [
+      {
+        "type": "youtube_integration",
+        "quantity": 1
+      }
+    ],
+    "offer_usd": 1800,
+    "contract": {
+      "exclusivity": {
+        "days": 0,
+        "scope": "none"
+      },
+      "usage_rights": {
+        "type": "organic",
+        "duration_days": null,
+        "perpetual": false,
+        "paid_usage_billed_separately": false
+      },
+      "kill_fee_percent": 50,
+      "revisions": 2
+    },
+    "requires_upfront_payment": false
+  },
+  "expected": {
+    "decision": "decline",
+    "hard_rules": {
+      "must_hit": [
+        "HR-1"
+      ],
+      "must_not_hit": []
+    },
+    "brand_entity": {
+      "should_confirm": null,
+      "confusable_with": []
+    },
+    "key_risks": [
+      {
+        "id": "blocked_category_gambling",
+        "desc": "邀请邮件自我介绍为体育博彩应用，属于朋友拒接的品类",
+        "check": {
+          "type": "hard_rule",
+          "rule": "HR-1"
+        }
+      }
+    ],
+    "must_not_claim": []
+  },
+  "label": {
+    "labeled_at": "2026-10-26",
+    "labeled_before_first_run": true,
+    "confidence": "high",
+    "boundary": false,
+    "rationale": "体育博彩为赌博，和自己价值观偏好冲突",
+    "relabel": {
+      "at": null,
+      "decision": null,
+      "confidence": null
+    },
+    "second_opinion": {
+      "by": "deepseek-v4-pro",
+      "at": "2026-10-26",
+      "decision": "decline",
+      "confidence": "high",
+      "note": "这是你明确勾选拒接的赌博品类，直接在清单里，不用谈。报价虽然不错，但碰了底线就干脆拒掉。 风险：品牌名在网上查不到任何公开信息，可能是不正规应用。；赌博内容与你的 family-friendly gaming 定位冲突，接了可能影响频道形象。"
+    },
+    "history": []
+  }
+}

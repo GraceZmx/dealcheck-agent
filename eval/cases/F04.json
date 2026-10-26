@@ -1,0 +1,115 @@
+{
+  "case": {
+    "id": "F04",
+    "category": "hard_rule",
+    "brand_kind": "fictional",
+    "description": "HR-3：要求先自费购买\"大使入门套装\"，报价看起来不错",
+    "eval_date": "2026-10-26",
+    "split": "test",
+    "invitation_notes": "邀请称这是\"品牌大使计划\"：先自费 49 美元购买入门套装（称是原价 5 折），入选后才开始付费合作。"
+  },
+  "profile": {
+    "followers": {
+      "instagram": 4000
+    },
+    "niche": "fitness_wellness",
+    "blocked_categories": [],
+    "blocked_custom": [],
+    "rate_floor_usd": null,
+    "values": [
+      "home workouts"
+    ]
+  },
+  "deal": {
+    "brand_name": "Ferrovale Athletics",
+    "brand_website": "https://ferrovale.example",
+    "brand_categories": [],
+    "deliverables": [
+      {
+        "type": "instagram_reel",
+        "quantity": 1
+      },
+      {
+        "type": "instagram_story",
+        "quantity": 3
+      }
+    ],
+    "offer_usd": 180,
+    "contract": {
+      "exclusivity": {
+        "days": 0,
+        "scope": "none"
+      },
+      "usage_rights": {
+        "type": "organic",
+        "duration_days": null,
+        "perpetual": false,
+        "paid_usage_billed_separately": false
+      },
+      "kill_fee_percent": 50,
+      "revisions": 2
+    },
+    "requires_upfront_payment": true
+  },
+  "expected": {
+    "decision": "decline",
+    "hard_rules": {
+      "must_hit": [
+        "HR-3"
+      ],
+      "must_not_hit": []
+    },
+    "brand_entity": {
+      "should_confirm": null,
+      "confusable_with": []
+    },
+    "key_risks": [
+      {
+        "id": "upfront_payment",
+        "desc": "邀请要求先自费 $49 买入门套装",
+        "check": {
+          "type": "hard_rule",
+          "rule": "HR-3"
+        }
+      }
+    ],
+    "must_not_claim": []
+  },
+  "label": {
+    "labeled_at": "2026-10-26",
+    "labeled_before_first_run": true,
+    "confidence": "high",
+    "boundary": false,
+    "rationale": "要你先自己花 $49 买入门套装才开始合作，这是先付钱的套路，不管报价多高都别接。",
+    "relabel": {
+      "at": null,
+      "decision": null,
+      "confidence": null
+    },
+    "second_opinion": {
+      "by": "deepseek-v4-pro",
+      "at": "2026-10-26",
+      "decision": "decline",
+      "confidence": "high",
+      "note": "这个别接。它让你先花49美元买“入门套装”才能进入付费合作，等于先交钱，这是底线风险；而且这品牌在网上完全查不到，很可能是专门让人买货的套路。就算后面给的180美元不错，也别为这个先掏钱。 风险：要求先自费49美元购买入门套装，有预付费用被骗风险；品牌名在公开网络完全搜索不到，无法核实公司真实性；“原价5折”促销话术常见于诱导购买，而非正常品牌合作；报价虽有市场竞争力，但先付钱后合作模式本身不合理"
+    },
+    "history": [
+      {
+        "at": "2026-10-26",
+        "field": "expected.decision",
+        "from": "accept",
+        "to": "decline",
+        "reason": "跑系统前修正，原因是读题遗漏",
+        "after_seeing_output": false
+      },
+      {
+        "at": "2026-10-26",
+        "field": "label.rationale",
+        "from": "给的在市场里算高的，而且你的粉丝量不大，给一个市场里较高的价格挺好的，也没有独家要求",
+        "to": "要你先自己花 $49 买入门套装才开始合作，这是先付钱的套路，不管报价多高都别接。",
+        "reason": "跑系统前修正，原因是读题遗漏",
+        "after_seeing_output": false
+      }
+    ]
+  }
+}

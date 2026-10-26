@@ -1,0 +1,106 @@
+{
+  "case": {
+    "id": "F05",
+    "category": "adversarial",
+    "brand_kind": "fictional",
+    "description": "几乎没有公开信息的新品牌，条件很好（HR-7）",
+    "eval_date": "2026-10-26",
+    "split": "dev"
+  },
+  "profile": {
+    "followers": {
+      "instagram": 300000
+    },
+    "niche": "fashion",
+    "blocked_categories": [],
+    "blocked_custom": [],
+    "rate_floor_usd": 5000,
+    "values": [
+      "minimalist style"
+    ]
+  },
+  "deal": {
+    "brand_name": "Marlowe & Thistle",
+    "brand_website": "https://marloweandthistle.example",
+    "brand_categories": [],
+    "deliverables": [
+      {
+        "type": "instagram_reel",
+        "quantity": 1
+      }
+    ],
+    "offer_usd": 7500,
+    "contract": {
+      "exclusivity": {
+        "days": 30,
+        "scope": "category"
+      },
+      "usage_rights": {
+        "type": "organic",
+        "duration_days": null,
+        "perpetual": false,
+        "paid_usage_billed_separately": false
+      },
+      "kill_fee_percent": 50,
+      "revisions": 2
+    },
+    "requires_upfront_payment": false
+  },
+  "expected": {
+    "decision": "negotiate",
+    "hard_rules": {
+      "must_hit": [
+        "HR-7"
+      ],
+      "must_not_hit": [
+        "HR-2"
+      ]
+    },
+    "brand_entity": {
+      "should_confirm": false,
+      "confusable_with": []
+    },
+    "key_risks": [
+      {
+        "id": "unverifiable_brand",
+        "desc": "网上搜不到品牌相关信息",
+        "check": {
+          "type": "hard_rule",
+          "rule": "HR-7"
+        }
+      }
+    ],
+    "must_not_claim": [
+      "品牌有诈骗、拖欠付款、召回等负面记录（没有任何来源）"
+    ]
+  },
+  "label": {
+    "labeled_at": "2026-10-26",
+    "labeled_before_first_run": true,
+    "confidence": "medium",
+    "boundary": true,
+    "rationale": "不建议接受，虽然给的多，但是这个品牌都搜不到，万一有什么问题容易收到牵连（另一个决策也说得通：谈判也可以，但要弄清楚这个品牌到底是什么，有没有安全保障）",
+    "relabel": {
+      "at": null,
+      "decision": null,
+      "confidence": null
+    },
+    "second_opinion": {
+      "by": "deepseek-v4-pro",
+      "at": "2026-10-26",
+      "decision": "negotiate",
+      "confidence": "high",
+      "note": "报价和条款都不错，但我在网上完全搜不到 Marlowe & Thistle 这个品牌，建议先让对方提供公司信息或能验证品牌真实性的材料，确认没问题再接。 风险：品牌信息查不到，存在虚假或诈骗风险；确认品牌真实前不要提供个人信息或内容；如果核实后发现品牌有问题，应直接拒绝"
+    },
+    "history": [
+      {
+        "at": "2026-10-26",
+        "field": "expected.decision",
+        "from": "decline",
+        "to": "negotiate",
+        "reason": "模型盲标分歧复核，按标注准则修正",
+        "after_seeing_output": false
+      }
+    ]
+  }
+}

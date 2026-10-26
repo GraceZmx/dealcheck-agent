@@ -91,7 +91,7 @@
 | `confidence` | `high` / `medium` / `low` |
 | `boundary` | 两个决策都说得通时为 `true` |
 | `rationale` | 2–4 句话，写给创作者朋友的理由 |
-| `relabel` | 2–3 天后自己盲标第二遍：`{at, decision, confidence}` |
+| `relabel` | 自己盲标第二遍：`{at, decision, confidence}`。V2.0 没有做（见 PRD 14.1 已知局限），保持为空 |
 | `second_opinion` | `deepseek-v4-pro` 盲标：`{by, at, decision, note}`，只作参考 |
 | `history` | 每次修改：`{at, field, from, to, reason, after_seeing_output}` |
 

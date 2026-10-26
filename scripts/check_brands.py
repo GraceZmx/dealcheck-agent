@@ -22,7 +22,7 @@ from urllib.parse import urlparse
 CASE_DIRS = ("eval/cases", "real_deals")  # 相对 local/
 BLOCKLIST = "brand_blocklist.txt"
 MIN_TOKEN_CHARS = 3  # 单个词少于 3 个字符的名字太容易误拦，忽略并提示
-SEPARATORS = r"[\s\-_.]*"  # Brand Name / brand-name / brand_name / brandname 都算命中
+SEPARATORS = r"[\s\-_.'’]*"  # Brand Name / brand-name / brand_name / brandname / Brand's Name 都算命中
 FORBIDDEN_DIRS = ("local/", "traces/", ".venv/")
 
 

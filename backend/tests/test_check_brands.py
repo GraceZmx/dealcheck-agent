@@ -62,6 +62,11 @@ def test_whole_words_only_and_generic_words_pass(text):
     assert not hits(text, "Fernwick Loop", "Glow")
 
 
+@pytest.mark.parametrize("text", ["Hollis's Hearth", "Hollis’s Hearth", "Holliss Hearth", "hollis-s-hearth"])
+def test_names_with_apostrophes(text):
+    assert hits(text, "Hollis's Hearth")
+
+
 def test_case_sensitive_entry():
     brand = cb.make_brand("Tuesday", case_sensitive=True)
     assert cb.scan_text("Brand Tuesday paid late", [brand], "x")

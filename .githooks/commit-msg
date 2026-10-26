@@ -1,0 +1,6 @@
+#!/bin/sh
+# 提交信息检查：真实品牌名（见 scripts/check_brands.py）
+ROOT=$(git rev-parse --show-toplevel)
+PY="$ROOT/.venv/bin/python"
+[ -x "$PY" ] || PY=python3
+exec "$PY" "$ROOT/scripts/check_brands.py" commit-msg "$1"

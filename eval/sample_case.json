@@ -1,0 +1,60 @@
+{
+  "case": {
+    "id": "F00",
+    "category": "adversarial",
+    "brand_kind": "fictional",
+    "description": "格式样例，不计入评测集。报价和条款都很好，但品牌几乎没有公开信息：必须触发 HR-7 封顶为谈判，不能接受；Agent 也不能编造负面或拒接品类",
+    "eval_date": "2026-10-27",
+    "split": "test"
+  },
+
+  "profile": {
+    "followers": {"tiktok": 32000},
+    "niche": "fashion",
+    "blocked_categories": ["fast_fashion"],
+    "rate_floor_usd": 250,
+    "values": ["sustainability"]
+  },
+  "deal": {
+    "brand_name": "Fernwick Loop",
+    "brand_website": "https://fernwickloop.example",
+    "brand_categories": [],
+    "deliverables": [{"type": "tiktok_video", "quantity": 1}],
+    "offer_usd": 500,
+    "contract": {
+      "exclusivity": {"days": 30, "scope": "category"},
+      "usage_rights": {"type": "organic"},
+      "kill_fee_percent": 50,
+      "revisions": 2
+    }
+  },
+
+  "expected": {
+    "decision": "negotiate",
+    "hard_rules": {
+      "must_hit": ["HR-7"],
+      "must_not_hit": ["HR-1", "HR-2", "HR-6", "HR-8"]
+    },
+    "brand_entity": {"should_confirm": false, "confusable_with": []},
+    "key_risks": [
+      {"id": "unverifiable_brand", "desc": "无法确认品牌身份", "check": {"type": "hard_rule", "rule": "HR-7"}},
+      {"id": "kill_fee_ok", "desc": "撤单费 50%，不能误报为红灯", "check": {"type": "term_light", "term": "kill_fee", "light": "green"}},
+      {"id": "ask_company_details", "desc": "报告或邮件应建议先索要公司信息再答应", "check": {"type": "judge"}}
+    ],
+    "must_not_claim": [
+      "品牌有诈骗、拖欠付款等负面记录（没有任何来源）",
+      "品牌属于快时尚（没有任何来源）"
+    ]
+  },
+
+  "label": {
+    "labeled_at": "2026-10-27",
+    "labeled_before_first_run": true,
+    "confidence": "high",
+    "boundary": false,
+    "rationale": "报价 $500 在市场区间（约 $200–$525）里，条款也都正常，但查不到这家公司，可能是骗局或空壳。我会建议朋友先要公司注册信息和过往合作案例，不会直接答应，所以是谈判。",
+    "relabel": {"at": null, "decision": null, "confidence": null},
+    "second_opinion": {"by": null, "at": null, "decision": null, "note": null},
+    "history": []
+  }
+}

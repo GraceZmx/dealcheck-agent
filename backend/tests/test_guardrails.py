@@ -198,6 +198,8 @@ def test_prompt_excludes_investigations_from_severe_flags():
     prompt = build_system_prompt(load_agent_config().budget, load_scoring_config())
     assert "Investigations, inquiries, warning or 60-day notices (e.g. Prop 65), and lawsuits" in prompt
     assert "are NOT severe flags" in prompt
+    assert "A settlement of a private lawsuit or class action is not a regulatory penalty" in prompt
+    assert "A recall counts only if it is of this brand's own product" in prompt
 
 
 def test_prompt_defines_low_values_fit_as_clear_conflict():
@@ -205,6 +207,8 @@ def test_prompt_defines_low_values_fit_as_clear_conflict():
     from app.agent.prompts import build_system_prompt
     prompt = build_system_prompt(load_agent_config().budget, load_scoring_config())
     assert "Use \"low\" only for a clear conflict, not because the brand is unrelated" in prompt
+    assert "mixed evidence" not in prompt  # 第二轮：mixed evidence 让模型把有冲突的品牌报成 medium，HR-9 不触发
+    assert "The brand's own claims or marketing do not cancel out credible third-party reports of a conflict" in prompt
 
 
 def test_brand_overview_sections_required_in_submit_schema():
